@@ -1,13 +1,39 @@
 <!DOCTYPE html>
-<html>
-	<title>Flappy Bird</title>
-	<head>
-		<link rel="shortcut icon" href="assets/flappy.ico" />
-        <link rel="stylesheet" type="text/css" href="game.css">
-        <script type="text/javascript" src="phaser.min.js"></script>
-        <script type="module" src = "game.js"></script>
-    </head>
-	<body>
-		<div style="font-family:font1; position:absolute; left:-1000px; visibility:hidden;">.</div>
-	</body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LFG MONEY</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/assets/flappy.ico" />
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" type="text/css" href="game.css">
+    
+    <!-- Load Phaser library -->
+    <script src="phaser.min.js"></script>
+
+    <!-- Load assets script before the game script -->
+    <script type="module" src="/js/assets.js"></script>
+
+    <!-- Load game script -->
+    <script type="module" src="/game.js"></script>
+
+</head>
+<body>
+    <div id="game-container">
+        <!-- The canvas will be inserted here by Phaser -->
+        <div id="button-container">
+            <div class="top-buttons">
+                <img src="/assets/button1-image.png" id="button1" alt="Button 1">
+                <img src="/assets/button2-image.png" id="button2" alt="Button 2">
+            </div>
+            <div class="bottom-buttons">
+                <img src="/assets/button3-image.png" id="button3" alt="Button 3">
+                <img src="/assets/button4-image.png" id="button4" alt="Button 4">
+            </div>
+        </div>
+    </div>
+</body>
 </html>

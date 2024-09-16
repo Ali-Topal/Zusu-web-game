@@ -2,79 +2,160 @@ import assets from './assets.js';
 import FlappyBird from './FlappyBird.js';
 
 class FlappyBirdScene extends Phaser.Scene {
-	constructor(){
+	constructor() {
 		super("FlappyBird");
 	}
 
-	preload(){
+	preload() {
 		let game = this;
+
+		this.load.audio('backgroundMusic', 'assets/background-music.mp3');
+		this.load.audio('flapSound', 'assets/flap.mp3');
+		this.load.audio('hitSound', 'assets/hit.mp3');
+		this.load.audio('pointSound', 'assets/point.mp3');
 
 		// scene assets
 		this.load.image(assets.scene.background.day, 'assets/background-day.png');
 		this.load.image(assets.scene.background.night, 'assets/background-night.png');
 		this.load.spritesheet(assets.scene.ground, 'assets/ground-sprite.png', {
-			frameWidth: 336,
-			frameHeight: 112
+			frameWidth: 672, // Doubled from 336
+			frameHeight: 320 // Doubled from 160
 		});
 
 		this.load.image(assets.scene.startGame, 'assets/startgame.png');
 		this.load.image(assets.scene.gameOver, 'assets/gameover.png');
 		this.load.image(assets.scene.restartGame, 'assets/restart-button.png');
-		
-		[assets.obstacle.pipe.green, assets.obstacle.pipe.red].forEach(function(pipe){
+		this.load.image(assets.scene.leaderboardButtonGameOver, 'assets/leaderboard-button-game-over.png');
+
+		[assets.obstacle.pipe.green, assets.obstacle.pipe.red].forEach(function (pipe) {
 			game.load.image(pipe.top, `assets/${pipe.top}.png`);
 			game.load.image(pipe.bottom, `assets/${pipe.bottom}.png`);
 		});
 
-		Object.keys(assets.bird).forEach(function(key){
+		Object.keys(assets.bird).forEach(function (key) {
 			let bird = assets.bird[key].name;
 			game.load.spritesheet(bird, `assets/${bird}-sprite.png`, {
-				frameWidth: 34,
-				frameHeight: 24
+				frameWidth: 84, //bird sprite size
+				frameHeight: 84 //bird sprite size
 			});
 		});
 		this.load.image(assets.scoreboard.score, 'assets/score.png');
 	}
 
-	create(){
+	create() {
 		let game = this;
 
+		// Add a flag to track leaderboard visibility
+		this.isLeaderboardVisible = false;
+	
+		// Create the leaderboard button after game over (initially hidden)
+		this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
+		this.leaderboardButtonGameOver.setScale(2); 
+		this.leaderboardButtonGameOver.setDepth(100);
+		this.leaderboardButtonGameOver.visible = false;
+		this.leaderboardButtonGameOver.on('pointerdown', () => {
+			this.toggleLeaderboard();
+		});
+
+		// Set the range for the random number of active users
+		this.minUsers = 300;  // Minimum number of active users
+		this.maxUsers = 800;  // Maximum number of active users
+	
+		// Initialize the active user count with a random value between minUsers and maxUsers
+		this.currentUsers = Phaser.Math.Between(this.minUsers, this.maxUsers);
+
+		// Create a text object to display the active user count
+		this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {
+			fontFamily: 'Arial',
+			fontSize: '24px', 
+			fill: '#ffffff',
+			stroke: '#000',
+			strokeThickness: 8, 
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5, 
+				offsetY: 6, 
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		});
+
+		// Set the depth of the text to make sure it's rendered on top
+		this.activeUsersText.setDepth(80);
+
+		// Log to check if the text object is created
+		console.log('Active Users Text Created:', this.activeUsersText);
+	
+		// Function to update the active user count
+		this.updateActiveUsers();
+	
+		// Periodically update the active user count every 5 seconds
+		this.time.addEvent({
+			delay: 5000,  
+			callback: this.updateActiveUsers,
+			callbackScope: this,
+			loop: true
+		});
+
+		// Play background music with looping enabled and volume set to 50%
+		this.backgroundMusic = this.sound.add('backgroundMusic', {
+			volume: 0.5,
+			loop: true 
+		});
+	
+		// Wait for user interaction (click, tap, etc.) to start the music
+		this.input.once('pointerdown', () => {
+			this.backgroundMusic.play();
+			console.log('Background music started after user interaction');
+		});
+	
+		// Handle tab visibility change manually (optional, but good to have)
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'visible') {
+				if (!this.backgroundMusic.isPlaying) {
+					this.backgroundMusic.play();
+				}
+			}
+		});
+
 		// background
-		this.backgroundDay = this.add.image(assets.scene.width, 256, assets.scene.background.day).setInteractive();
-		this.backgroundNight = this.add.image(assets.scene.width, 256, assets.scene.background.night).setInteractive();
+		this.backgroundDay = this.add.image(assets.scene.width * 2, 360, assets.scene.background.day).setInteractive();
+		this.backgroundNight = this.add.image(assets.scene.width * 2, 360, assets.scene.background.night).setInteractive();
 		this.backgroundNight.visible = false;
 
 		this.gaps = this.physics.add.group(); // gaps between pipes
 		this.pipes = this.physics.add.group();
 
-		// birds animation 
-		Object.keys(assets.bird).forEach(function(key){
+		// birds animation
+		Object.keys(assets.bird).forEach(function (key) {
 			game.anims.create({
-					key: assets.bird[key].clapWings,
-					frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
-							start: 0,
-							end: 2
-					}),
-					frameRate: 10,
-					repeat: -1
+				key: assets.bird[key].clapWings,
+				frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
+					start: 0,
+					end: 2
+				}),
+				frameRate: 8,
+				repeat: -1
 			});
 
 			game.anims.create({
-					key: assets.bird[key].stop,
-					frames: [{
-							key: assets.bird[key].name,
-							frame: 1
-					}],
-					frameRate: 20
+				key: assets.bird[key].stop,
+				frames: [{
+					key: assets.bird[key].name,
+					frame: 1
+				}],
+				frameRate: 20
 			});
 		});
 
 		// ground 
-		this.ground = this.physics.add.sprite(assets.scene.width, 468, assets.scene.ground);
+		this.ground = this.physics.add.sprite(assets.scene.width * 2, 936, assets.scene.ground);
 		this.ground.setCollideWorldBounds(true);
 		this.ground.setDepth(20);
-		// ajust collision box for the ground
-		this.ground.setSize(0, 100, 0, 0).setOffset(0, 10);
+		// adjust collision box for the ground
+		this.ground.setSize(0, 300, 0, 0).setOffset(0, 8); // Doubled height and offset
 
 		this.anims.create({ key: assets.animation.ground.moving, 
 			frames: this.anims.generateFrameNumbers(assets.scene.ground, {
@@ -92,100 +173,209 @@ class FlappyBirdScene extends Phaser.Scene {
 			}],
 			frameRate: 20
 		});
-		
+
 		// start, over, repeat
-		this.start = this.add.image(assets.scene.width, 156, assets.scene.startGame);
+		this.start = this.add.image(assets.scene.width * 2, 312, assets.scene.startGame);
+		this.start.setScale(2); 
 		this.start.setDepth(30);
 		this.start.visible = false;
 
-		this.gameOver = this.add.image(assets.scene.width, 100, assets.scene.gameOver);
+		this.gameOver = this.add.image(assets.scene.width * 2, 140, assets.scene.gameOver);
+		this.gameOver.setScale(2); 
 		this.gameOver.setDepth(20);
 		this.gameOver.visible = false;
 
-		this.restart = this.add.image(assets.scene.width, 300, assets.scene.restartGame).setInteractive();
+		this.restart = this.add.image(assets.scene.width * 2, 560, assets.scene.restartGame).setInteractive();
+		this.restart.setScale(2); 
 		this.restart.setDepth(20);
 		this.restart.visible = false;
 		this.restart.on('pointerdown', () => this.restartGame(this));
 
-		this.scoreboard = this.add.image(assets.scene.width, 200, assets.scoreboard.score);
-		this.scoreboard.scale = 0.5;
+		this.scoreboard = this.add.image(assets.scene.width * 2, 360, assets.scoreboard.score);
+		this.scoreboard.scale = 1; 
 		this.scoreboard.setDepth(30);
 
-		this.scoreTxt = this.add.text(assets.scene.width, 40, 
-			'0', { 
-					fontFamily: 'font1', 
-					fontSize: '38px', 
-					fill: '#fff', 
-					stroke: '#000',
-					strokeThickness: 4,
-					strokeLinecap: 'square',
-					shadow: {
-						offsetX: 2.5,
-						offsetY: 3,
-						color: '#000',
-						blur: 0,
-						stroke: true,
-						fill: true
-					}
+		this.scoreTxt = this.add.text(assets.scene.width * 2, 80,
+			'0', {
+				fontFamily: 'font1',
+				fontSize: '76px', 
+				fill: '#fff',
+				stroke: '#000',
+				strokeThickness: 8, 
+				strokeLinecap: 'square',
+				shadow: {
+					offsetX: 5, 
+					offsetY: 6, 
+					color: '#000',
+					blur: 0,
+					stroke: true,
+					fill: true
 				}
-			);
+			}
+		);
 		this.scoreTxt.setDepth(30);
-		this.scoreTxt.setOrigin(0.5); //center text
+		this.scoreTxt.setOrigin(0.5); 
 		this.scoreTxt.alpha = 0;
 
-		this.scored = this.add.text(assets.scene.width+5, 186, 
-			'0', { 
-					fontFamily: 'font1', 
-					fontSize: '18px', 
-					fill: '#fff', 
-					stroke: '#000',
-					strokeThickness: 3,
-				}
-			);
+		this.scored = this.add.text(assets.scene.width * 2 + 2, 340,
+			'0', {
+				fontFamily: 'font1',
+				fontSize: '36px',
+				fill: '#fff',
+				stroke: '#000',
+				strokeThickness: 6, 
+			}
+		);
 		this.scored.setDepth(30);
 		this.scored.setOrigin(0.5);
 
-		this.bestScore = this.add.text(assets.scene.width+5, 225, 
-			'0', { 
-					fontFamily: 'font1', 
-					fontSize: '18px', 
-					fill: '#fff', 
-					stroke: '#000',
-					strokeThickness: 3,
-				}
-			);
+		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 420,
+			'0', {
+				fontFamily: 'font1',
+				fontSize: '36px', 
+				fill: '#fff',
+				stroke: '#000',
+				strokeThickness: 6, 
+			}
+		);
 		this.bestScore.setDepth(30);
 		this.bestScore.setOrigin(0.5, 0.5);
 
 		this.initGame();
 	}
 
-	update(time, delta){
+	updateActiveUsers() {
+		// Generate a small random number to change the currentUsers (e.g., ±10)
+		const change = Phaser.Math.Between(-5, 5);
+
+		// Update the currentUsers by the small change
+		this.currentUsers += change;
+	
+		// Ensure the currentUsers stays within the minUsers and maxUsers range
+		if (this.currentUsers < this.minUsers) {
+			this.currentUsers = this.minUsers;
+		} else if (this.currentUsers > this.maxUsers) {
+			this.currentUsers = this.maxUsers;
+		}
+	
+		// Update the active users text on the screen
+		this.activeUsersText.setText(`Active Players: ${this.currentUsers}`);
+	
+	}
+
+	toggleLeaderboard() {
+		// Toggle the leaderboard visibility
+		if (this.isLeaderboardVisible) {
+			// If the leaderboard is visible, hide it
+			this.hideLeaderboard();
+		} else {
+			// If the leaderboard is not visible, fetch and show it
+			this.showLeaderboard();
+		}
+	}
+
+	showLeaderboard() {
+		// Fetch the leaderboard data from the server
+		fetch('http://localhost:3000/api/leaderboard')
+			.then(response => response.json())
+			.then(data => {
+				console.log('Leaderboard:', data.leaderboard);
+				this.displayLeaderboard(data.leaderboard);
+				// Disable the restart button when the leaderboard is shown
+				this.restart.disableInteractive();
+			})
+			.catch(error => {
+				console.error('Error fetching leaderboard:', error);
+			});
+	}
+
+	hideLeaderboard() {
+    	this.isLeaderboardVisible = false; // Mark the leaderboard as hidden
+
+    	// Destroy the leaderboard text to hide it
+    	if (this.leaderboardText) {
+        	this.leaderboardText.destroy();
+        	this.leaderboardText = null;
+    	}
+
+		if (this.leaderboardBackdrop) {
+			this.leaderboardBackdrop.destroy();
+			this.leaderboardBackdrop = null;
+		}
+
+		// Re-enable the restart button when the leaderboard is hidden
+		this.restart.setInteractive();
+	}
+	
+	displayLeaderboard(leaderboard) {
+		this.isLeaderboardVisible = true; // Mark the leaderboard as visible
+	
+		// Create a semi-transparent backdrop to cover the screen
+		this.leaderboardBackdrop = this.add.graphics();
+		this.leaderboardBackdrop.fillStyle(0x000000, 0.8); // Black color with 70% opacity
+		this.leaderboardBackdrop.fillRect(0, 0, this.sys.game.config.width, 720); // Doubled height
+		this.leaderboardBackdrop.setDepth(99); // Ensure it's behind the leaderboard but above the game
+	
+		// Clear any previous leaderboard text
+		if (this.leaderboardText) {
+			this.leaderboardText.destroy();
+		}
+	
+		// Create a text object for the leaderboard (position it in the center)
+		let leaderboardText = '';
+		leaderboard.forEach((entry, index) => {
+			leaderboardText += `${index + 1}. ${entry.username}: ${entry.score}\n`;
+		});
+
+		this.leaderboardText = this.add.text(this.sys.game.config.width / 2, 300, leaderboardText, {
+			fontFamily: 'font1',
+			fontSize: '36px', 
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 8, 
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5, 
+				offsetY: 6, 
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		}).setDepth(100) 
+		.setOrigin(0.5, 0.5); 
+	}
+
+	update(time, delta) {
 		if (this.isGameOver) return;
 		if (!this.hasGameStarted) return;
 
+		// Restrict the bird from flying above the screen
+		if (this.flappyBird.y <= 40) {
+			this.flappyBird.y = 40; 
+		}
+
 		this.flappyBird.falls();
 
-		this.pipes.children.iterate(function(pipe){
+		this.pipes.children.iterate(function (pipe) {
 			if (pipe == undefined) return;
-			if (pipe.x < -50) pipe.destroy();
-			else pipe.setVelocityX(-100);
+			if (pipe.x < -100) pipe.destroy();
+			else pipe.setVelocityX(-170); ///////////////////////
 		});
 
-		this.gaps.children.iterate(function(gap){
-			gap.body.setVelocityX(-100);
+		this.gaps.children.iterate(function (gap) {
+			gap.body.setVelocityX(-170);//////////////////////////
 		});
 
 		this.nextPipes++;
 
-		if (this.nextPipes === 130){
+		if (this.nextPipes === 150) { ///////////////////////////
 			this.makePipes();
 			this.nextPipes = 0;
 		}
-
 	}
 
-	initGame(){
+	initGame() {
 		this.nextPipes = 0;
 		this.score = 0;
 		this.isGameOver = false;
@@ -197,30 +387,35 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scored.visible = false;
 		this.bestScore.visible = false;
 		this.backgroundDay.visible = true;
-		this.backgroundNight.visible = false;
 		this.currentPipe = assets.obstacle.pipe.green;
-		this.flappyBird = new FlappyBird(this, 60, 265);
+		this.flappyBird = new FlappyBird(this, 120, 400);
+		// Set custom size for the bird's hitbox (width, height)
+		this.flappyBird.body.setSize(64, 64);  // These are default dimensions, adjust them as needed
+		// Set an offset for the hitbox (x, y), useful if the sprite has padding or transparent areas
+		this.flappyBird.body.setOffset(10, 16);  // Adjust the offset as needed
 
 		// controls: works for mobile too
 		this.input.on('pointerdown', function () {
+			console.log("Pointer down event received!");
 			this.flapBird();
 		}, this);
 
 		this.physics.add.collider(this.flappyBird, this.ground, this.hitBird, null, this);
 		this.physics.add.overlap(this.flappyBird, this.pipes, this.hitBird, null, this);
 		this.physics.add.overlap(this.flappyBird, this.gaps, this.updateScore, null, this);
-		this.ground.anims.play( assets.animation.ground.moving, true );
+		this.ground.anims.play(assets.animation.ground.moving, true);
 	}
 
-	flapBird(){
+	flapBird() {
 		if (this.isGameOver) return;
 		if (!this.hasGameStarted) this.startGame();
 		this.flappyBird.flap();
+		this.sound.play('flapSound', { volume: 0.2 });
 	}
 
-	saveScore(){
+	saveScore() {
 		let bestScore = parseInt(localStorage.getItem('bestScore'));
-		if (bestScore){
+		if (bestScore) {
 			localStorage.setItem('bestScore', Math.max(this.score, bestScore));
 			this.bestScore.setText(bestScore);
 		} else {
@@ -232,13 +427,35 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.bestScore.visible = true;
 	}
 
-	hitBird(){
+	hitBird() {
+		// Check if the death sound has already been played
+        if (!this.hasPlayedDeathSound) {
+            this.sound.play('hitSound', { volume: 0.4 });
+            this.hasPlayedDeathSound = true; 
+
+			// Submit the score to the server
+			fetch('http://localhost:3000/api/submit-score', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ username: this.username, score: this.score })
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					console.log('Score submitted successfully:', this.score);
+				}
+			})
+			.catch(error => console.error('Error submitting score:', error));
+        }
 		// stop the pipes
-		this.pipes.children.iterate(function(pipe){
+		this.pipes.children.iterate(function (pipe) {
 			if (pipe == undefined) return;
 			pipe.setVelocityX(0);
 		});
 
+		this.leaderboardButtonGameOver.visible = true;
 		this.saveScore();
 		this.isGameOver = true;
 		this.scoreboard.visible = true;
@@ -250,7 +467,9 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreTxt.setText('');
 	}
 
-	restartGame(scene){
+	restartGame(scene) {
+		scene.leaderboardButtonGameOver.visible = false;
+		this.hasPlayedDeathSound = false; // Reset the flag for the next game
 		scene.pipes.clear(true, true);
 		scene.gaps.clear(true, true);
 		scene.flappyBird.destroy();
@@ -261,44 +480,42 @@ class FlappyBirdScene extends Phaser.Scene {
 		scene.initGame();
 	}
 
-	updateScore(_, gap){
+	updateScore(_, gap) {
 		this.score++;
 		gap.destroy();
 
-		if (this.score % 10 == 0){
-			this.backgroundDay.visible = !this.backgroundDay.visible;
-			this.backgroundNight.visible = !this.backgroundNight.visible;
-			if (this.currentPipe === assets.obstacle.pipe.green){
+		if (this.score == 20) {
 				this.currentPipe = assets.obstacle.pipe.red;
-			} else {
-				this.currentPipe = assets.obstacle.pipe.green;
-			}
 		}
-		this.scoreTxt.setText(this.score);
+		
+		setTimeout(() => {
+			this.sound.play('pointSound', { volume: 0.2 });
+			this.scoreTxt.setText(this.score);
+		}, 400);
 	}
 
-	startGame(){
+	startGame() {
 		this.scoreTxt.alpha = 1;
 		this.hasGameStarted = true;
 		this.start.visible = false;
 		this.makePipes();
 	}
 
-	makePipes(){
+	makePipes() {
 		if (!this.hasGameStarted) return;
 		if (this.isGameOver) return;
 
-		const top = Phaser.Math.Between(-120, 120);
-		const gap = this.add.line(288, top + 210, 0, 0, 0, 98);
+		const top = Phaser.Math.Between(-200, 30); //adjust maximum deviation from centre
+		const gap = this.add.line(600, top + 425, 0, 0, 0, 210); //gap between pipes hitbox
 		this.gaps.add(gap);
 		gap.body.allowGravity = false;
 		gap.visible = false;
 
-		const pipeTop = this.pipes.create(288, top, this.currentPipe.top).setImmovable(true);
+		const pipeTop = this.pipes.create(650, top, this.currentPipe.top).setImmovable(true);
 		pipeTop.body.allowGravity = false;
 
-		const pipeBottom = this.pipes.create(288, top + 420, this.currentPipe.bottom).setImmovable(true);
-		pipeBottom.body.allowGravity = false;			
+		const pipeBottom = this.pipes.create(650, top + 850, this.currentPipe.bottom).setImmovable(true); //adjust gap between pipes
+		pipeBottom.body.allowGravity = false;
 	}
 }
 

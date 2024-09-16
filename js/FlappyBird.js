@@ -1,3 +1,4 @@
+
 import assets from './assets.js';
 
 class FlappyBird extends Phaser.GameObjects.Sprite {
@@ -16,7 +17,7 @@ class FlappyBird extends Phaser.GameObjects.Sprite {
 	}
 
 	flap(){
-		this.body.setVelocityY(-300);
+		this.body.setVelocityY(-400);
 		this.setAngle(-15);
 		this.angle = -15;
 		this.upwardsVelocity = 30;
@@ -31,7 +32,7 @@ class FlappyBird extends Phaser.GameObjects.Sprite {
 			this.setAngle(this.angle);
 		}}
 		this.body.allowGravity = true;
-		this.body.gravity.y = 250;
+		this.body.gravity.y = 500;
 
 	}
 

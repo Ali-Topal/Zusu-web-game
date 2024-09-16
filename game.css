@@ -1,22 +1,77 @@
 @font-face {
     font-family: 'font1';
-    src: url('assets/myfont.woff') format('woff'),
-        url('assets/myfont.ttf') format('truetype');
+    src: url('/assets/myfont.woff') format('woff'),
+         url('/assets/myfont.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
 
-body{
-    background: #fff;
-    padding: 0px;
-    margin: 0px;
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(
+        0deg,
+        #131b24 0%,
+        #131b24 100%
+    );
 }
 
-canvas{
-    display:block;
-    margin: 0;
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    max-width: 56.25vh; /* 9:16 aspect ratio */
+    max-height: 177.78vw; /* 9:16 aspect ratio */
+}
+
+canvas {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#button-container {
+    position: absolute;
+    bottom: 1%;
+    left: 0;
+    width: 100%;
+    height: 24%; /* Adjust this value to control the overall height of the button area */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
+}
+
+.top-buttons, .bottom-buttons {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 55%; /* Slightly less than 50% to create some vertical gap */
+}
+
+#button-container img {
+    height: 100%;
+    width: auto;
+    max-width: 45%; /* Prevents buttons from being too wide */
+    object-fit: contain;
+    margin: 0 2.5%; /* Creates horizontal gap between buttons */
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+#button-container img:active {
+    transform: scale(0.95);
+}
+
+#button-container img:hover {
+    opacity: 0.8;
 }

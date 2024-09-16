@@ -37,7 +37,10 @@ const assets = {
         ground: 'ground',
         gameOver: 'game-over',
         restartGame: 'restart-button',
-        startGame: 'start-game'
+        startGame: 'start-game',
+        leaderboardButton: 'leaderboard-button', // Leaderboard button asset (top left)
+        leaderboardButtonGameOver: 'leaderboard-button-game-over' // Leaderboard button after game over
+
     },
     scoreboard: {
         width: 25,
@@ -49,7 +52,15 @@ const assets = {
             moving: 'moving-ground',
             stop: 'stop-ground'
         }
-    }
+    },
+
+    buttons: {
+        button1: 'button1-image',
+        button2: 'button2-image',   
+        button3: 'button3-image',
+        button4: 'button4-image'
+    },
+    
 }
 
 export default assets;
