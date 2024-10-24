@@ -43,224 +43,242 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 
 	create() {
-		let game = this;
+        let game = this;
 
-		// Add a flag to track leaderboard visibility
-		this.isLeaderboardVisible = false;
-	
-		// Create the leaderboard button after game over (initially hidden)
-		this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
-		this.leaderboardButtonGameOver.setScale(2); 
-		this.leaderboardButtonGameOver.setDepth(100);
-		this.leaderboardButtonGameOver.visible = false;
-		this.leaderboardButtonGameOver.on('pointerdown', () => {
-			this.toggleLeaderboard();
-		});
+        // Add a flag to track leaderboard visibility
+        this.isLeaderboardVisible = false;
+    
+        // Create the leaderboard button after game over (initially hidden)
+        this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
+        this.leaderboardButtonGameOver.setScale(2); 
+        this.leaderboardButtonGameOver.setDepth(100);
+        this.leaderboardButtonGameOver.visible = false;
+        this.leaderboardButtonGameOver.on('pointerdown', () => {
+            this.toggleLeaderboard();
+        });
 
-		// Set the range for the random number of active users
-		this.minUsers = 400;  // Minimum number of active users
-		this.maxUsers = 1300;  // Maximum number of active users
-	
-		// Initialize the active user count with a random value between minUsers and maxUsers
-		this.currentUsers = Phaser.Math.Between(this.minUsers, this.maxUsers);
+        // Set the range for active users (matching server constraints)
+        this.minUsers = 100;
+        this.maxUsers = 500;
 
-		// Create a text object to display the active user count
-		this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {
-			fontFamily: 'Arial',
-			fontSize: '24px', 
-			fill: '#ffffff',
-			stroke: '#000',
-			strokeThickness: 8, 
-			strokeLinecap: 'square',
-			shadow: {
-				offsetX: 5, 
-				offsetY: 6, 
-				color: '#000',
-				blur: 0,
-				stroke: true,
-				fill: true
-			}
-		});
+        // Create a text object to display the active user count
+        this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {
+            fontFamily: 'Arial',
+            fontSize: '24px', 
+            fill: '#ffffff',
+            stroke: '#000',
+            strokeThickness: 8, 
+            strokeLinecap: 'square',
+            shadow: {
+                offsetX: 5, 
+                offsetY: 6, 
+                color: '#000',
+                blur: 0,
+                stroke: true,
+                fill: true
+            }
+        });
 
-		// Set the depth of the text to make sure it's rendered on top
-		this.activeUsersText.setDepth(80);
+        this.activeUsersText.setDepth(80);
 
-		// Log to check if the text object is created
-		console.log('Active Users Text Created:', this.activeUsersText);
-	
-		// Function to update the active user count
-		this.updateActiveUsers();
-	
-		// Periodically update the active user count every 5 seconds
-		this.time.addEvent({
-			delay: 5000,  
-			callback: this.updateActiveUsers,
-			callbackScope: this,
-			loop: true
-		});
+        // Function to fetch active users from the server
+        this.fetchActiveUsers = async () => {
+            try {
+                const response = await fetch('https://zusu.xyz/api/active-users');
+                const data = await response.json();
+                this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
+            } catch (error) {
+                console.error('Error fetching active users:', error);
+            }
+        };
 
-		// Play background music with looping enabled and volume set to 50%
-		this.backgroundMusic = this.sound.add('backgroundMusic', {
-			volume: 0.5,
-			loop: true 
-		});
-	
-		// Wait for user interaction (click, tap, etc.) to start the music
-		this.input.once('pointerdown', () => {
-			this.backgroundMusic.play();
-			console.log('Background music started after user interaction');
-		});
-	
-		// Handle tab visibility change manually (optional, but good to have)
-		document.addEventListener('visibilitychange', () => {
-			if (document.visibilityState === 'visible') {
-				if (!this.backgroundMusic.isPlaying) {
-					this.backgroundMusic.play();
-				}
-			}
-		});
+        // Function to update server with random user count changes
+        this.updateActiveUsers = async () => {
+            try {
+                // Generate a small random change (-2 to +2)
+                const change = Phaser.Math.Between(-2, 2);
+                
+                // Send the change to the server
+                const response = await fetch('https://zusu.xyz/api/update-active-users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ change })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
+                }
+            } catch (error) {
+                console.error('Error updating active users:', error);
+            }
+        };
 
-		// background
-		this.backgroundDay = this.add.image(assets.scene.width * 2, 360, assets.scene.background.day).setInteractive();
-		this.backgroundNight = this.add.image(assets.scene.width * 2, 360, assets.scene.background.night).setInteractive();
-		this.backgroundNight.visible = false;
+        // Initially fetch the active users count
+        this.fetchActiveUsers();
 
-		this.gaps = this.physics.add.group(); // gaps between pipes
-		this.pipes = this.physics.add.group();
+        // Periodically update the active users count every 5 seconds
+        this.time.addEvent({
+            delay: 5000,
+            callback: this.updateActiveUsers,
+            callbackScope: this,
+            loop: true
+        });
 
-		// birds animation
-		Object.keys(assets.bird).forEach(function (key) {
-			game.anims.create({
-				key: assets.bird[key].clapWings,
-				frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
-					start: 0,
-					end: 2
-				}),
-				frameRate: 8,
-				repeat: -1
-			});
+        // Play background music with looping enabled and volume set to 50%
+        this.backgroundMusic = this.sound.add('backgroundMusic', {
+            volume: 0.5,
+            loop: true 
+        });
+    
+        // Wait for user interaction (click, tap, etc.) to start the music
+        this.input.once('pointerdown', () => {
+            this.backgroundMusic.play();
+            console.log('Background music started after user interaction');
+        });
+    
+        // Handle tab visibility change manually
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                if (!this.backgroundMusic.isPlaying) {
+                    this.backgroundMusic.play();
+                }
+            }
+        });
 
-			game.anims.create({
-				key: assets.bird[key].stop,
-				frames: [{
-					key: assets.bird[key].name,
-					frame: 1
-				}],
-				frameRate: 20
-			});
-		});
+        // background
+        this.backgroundDay = this.add.image(assets.scene.width * 2, 360, assets.scene.background.day).setInteractive();
+        this.backgroundNight = this.add.image(assets.scene.width * 2, 360, assets.scene.background.night).setInteractive();
+        this.backgroundNight.visible = false;
 
-		// ground 
-		this.ground = this.physics.add.sprite(assets.scene.width * 2, 936, assets.scene.ground);
-		this.ground.setCollideWorldBounds(true);
-		this.ground.setDepth(20);
-		// adjust collision box for the ground
-		this.ground.setSize(0, 300, 0, 0).setOffset(0, 8); // Doubled height and offset
+        this.gaps = this.physics.add.group();
+        this.pipes = this.physics.add.group();
 
-		this.anims.create({ key: assets.animation.ground.moving, 
-			frames: this.anims.generateFrameNumbers(assets.scene.ground, {
-				start: 0,
-				end: 2
-			}),
-			frameRate: 15,
-			repeat: -1
-		});
+        // birds animation
+        Object.keys(assets.bird).forEach(function (key) {
+            game.anims.create({
+                key: assets.bird[key].clapWings,
+                frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
+                    start: 0,
+                    end: 2
+                }),
+                frameRate: 8,
+                repeat: -1
+            });
 
-		this.anims.create({ key: assets.animation.ground.moving, 
-			frames:[{
-				key: assets.scene.ground,
-				frame: 0
-			}],
-			frameRate: 20
-		});
+            game.anims.create({
+                key: assets.bird[key].stop,
+                frames: [{
+                    key: assets.bird[key].name,
+                    frame: 1
+                }],
+                frameRate: 20
+            });
+        });
 
-		// start, over, repeat
-		this.start = this.add.image(assets.scene.width * 2, 312, assets.scene.startGame);
-		this.start.setScale(2); 
-		this.start.setDepth(30);
-		this.start.visible = false;
+        // ground 
+        this.ground = this.physics.add.sprite(assets.scene.width * 2, 936, assets.scene.ground);
+        this.ground.setCollideWorldBounds(true);
+        this.ground.setDepth(20);
+        this.ground.setSize(0, 300, 0, 0).setOffset(0, 8);
 
-		this.gameOver = this.add.image(assets.scene.width * 2, 140, assets.scene.gameOver);
-		this.gameOver.setScale(2); 
-		this.gameOver.setDepth(20);
-		this.gameOver.visible = false;
+        this.anims.create({
+            key: assets.animation.ground.moving,
+            frames: this.anims.generateFrameNumbers(assets.scene.ground, {
+                start: 0,
+                end: 2
+            }),
+            frameRate: 15,
+            repeat: -1
+        });
 
-		this.restart = this.add.image(assets.scene.width * 2, 560, assets.scene.restartGame).setInteractive();
-		this.restart.setScale(2); 
-		this.restart.setDepth(20);
-		this.restart.visible = false;
-		this.restart.on('pointerdown', () => this.restartGame(this));
+        this.anims.create({
+            key: assets.animation.ground.moving,
+            frames: [{
+                key: assets.scene.ground,
+                frame: 0
+            }],
+            frameRate: 20
+        });
 
-		this.scoreboard = this.add.image(assets.scene.width * 2, 360, assets.scoreboard.score);
-		this.scoreboard.scale = 1; 
-		this.scoreboard.setDepth(30);
+        // start, over, repeat
+        this.start = this.add.image(assets.scene.width * 2, 312, assets.scene.startGame);
+        this.start.setScale(2);
+        this.start.setDepth(30);
+        this.start.visible = false;
 
-		this.scoreTxt = this.add.text(assets.scene.width * 2, 80,
-			'0', {
-				fontFamily: 'font1',
-				fontSize: '76px', 
-				fill: '#fff',
-				stroke: '#000',
-				strokeThickness: 8, 
-				strokeLinecap: 'square',
-				shadow: {
-					offsetX: 5, 
-					offsetY: 6, 
-					color: '#000',
-					blur: 0,
-					stroke: true,
-					fill: true
-				}
-			}
-		);
-		this.scoreTxt.setDepth(30);
-		this.scoreTxt.setOrigin(0.5); 
-		this.scoreTxt.alpha = 0;
+        this.gameOver = this.add.image(assets.scene.width * 2, 140, assets.scene.gameOver);
+        this.gameOver.setScale(2);
+        this.gameOver.setDepth(20);
+        this.gameOver.visible = false;
 
-		this.scored = this.add.text(assets.scene.width * 2 + 2, 340,
-			'0', {
-				fontFamily: 'font1',
-				fontSize: '36px',
-				fill: '#fff',
-				stroke: '#000',
-				strokeThickness: 6, 
-			}
-		);
-		this.scored.setDepth(30);
-		this.scored.setOrigin(0.5);
+        this.restart = this.add.image(assets.scene.width * 2, 560, assets.scene.restartGame).setInteractive();
+        this.restart.setScale(2);
+        this.restart.setDepth(20);
+        this.restart.visible = false;
+        this.restart.on('pointerdown', () => this.restartGame(this));
 
-		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 420,
-			'0', {
-				fontFamily: 'font1',
-				fontSize: '36px', 
-				fill: '#fff',
-				stroke: '#000',
-				strokeThickness: 6, 
-			}
-		);
-		this.bestScore.setDepth(30);
-		this.bestScore.setOrigin(0.5, 0.5);
+        this.scoreboard = this.add.image(assets.scene.width * 2, 360, assets.scoreboard.score);
+        this.scoreboard.scale = 1;
+        this.scoreboard.setDepth(30);
 
-		this.initGame();
-	}
+        this.scoreTxt = this.add.text(assets.scene.width * 2, 80, '0', {
+            fontFamily: 'font1',
+            fontSize: '76px',
+            fill: '#fff',
+            stroke: '#000',
+            strokeThickness: 8,
+            strokeLinecap: 'square',
+            shadow: {
+                offsetX: 5,
+                offsetY: 6,
+                color: '#000',
+                blur: 0,
+                stroke: true,
+                fill: true
+            }
+        });
+        this.scoreTxt.setDepth(30);
+        this.scoreTxt.setOrigin(0.5);
+        this.scoreTxt.alpha = 0;
+
+        this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', {
+            fontFamily: 'font1',
+            fontSize: '36px',
+            fill: '#fff',
+            stroke: '#000',
+            strokeThickness: 6,
+        });
+        this.scored.setDepth(30);
+        this.scored.setOrigin(0.5);
+
+        this.bestScore = this.add.text(assets.scene.width * 2 + 2, 420, '0', {
+            fontFamily: 'font1',
+            fontSize: '36px',
+            fill: '#fff',
+            stroke: '#000',
+            strokeThickness: 6,
+        });
+        this.bestScore.setDepth(30);
+        this.bestScore.setOrigin(0.5, 0.5);
+
+        this.initGame();
+    }
 
 	updateActiveUsers() {
-		// Generate a small random number to change the currentUsers (e.g., ±10)
-		const change = Phaser.Math.Between(-5, 5);
-
-		// Update the currentUsers by the small change
-		this.currentUsers += change;
-	
-		// Ensure the currentUsers stays within the minUsers and maxUsers range
-		if (this.currentUsers < this.minUsers) {
-			this.currentUsers = this.minUsers;
-		} else if (this.currentUsers > this.maxUsers) {
-			this.currentUsers = this.maxUsers;
-		}
-	
-		// Update the active users text on the screen
-		this.activeUsersText.setText(`Active Players: ${this.currentUsers}`);
-	
+		// Fetch the active users count from the server
+		fetch('https://zusu.xyz/api/active-users')
+			.then(response => response.json())
+			.then(data => {
+				// Update the active users count text on the screen
+				this.currentUsers = data.activeUsers;
+				this.activeUsersText.setText(`Active Players: ${this.currentUsers}`);
+			})
+			.catch(error => {
+				console.error('Error fetching active users:', error);
+			});
 	}
 
 	toggleLeaderboard() {
