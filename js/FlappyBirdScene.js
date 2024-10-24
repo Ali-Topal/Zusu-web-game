@@ -448,7 +448,9 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreboard.visible = false;
 		this.scored.visible = false;
 		this.bestScore.visible = false;
-		this.backgroundDay.visible = true;
+		this.backgrounds.forEach(bg => {
+			bg.visible = true;
+		});
 		this.currentPipe = assets.obstacle.pipe.green;
 		this.flappyBird = new FlappyBird(this, 120, 400);
 		// Set custom size for the bird's hitbox (width, height)
@@ -516,6 +518,11 @@ class FlappyBirdScene extends Phaser.Scene {
 			if (pipe == undefined) return;
 			pipe.setVelocityX(0);
 		});
+
+		// Stop background scrolling by setting game over flag
+		this.isGameOver = true;
+		this.hasGameStarted = false;
+		
 
 		this.leaderboardButtonGameOver.visible = true;
 		this.saveScore();
