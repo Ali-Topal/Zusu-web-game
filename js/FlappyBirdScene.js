@@ -43,229 +43,271 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 
 	create() {
-        let game = this;
+		let game = this;
+	
+		// Add a flag to track leaderboard visibility
+		this.isLeaderboardVisible = false;
+	
+		// Create the leaderboard button after game over (initially hidden)
+		this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
+		this.leaderboardButtonGameOver.setScale(2); 
+		this.leaderboardButtonGameOver.setDepth(100);
+		this.leaderboardButtonGameOver.visible = false;
+		this.leaderboardButtonGameOver.on('pointerdown', () => {
+			this.toggleLeaderboard();
+		});
+	
+		// Set the range for active users (matching server constraints)
+		this.minUsers = 100;
+		this.maxUsers = 500;
+	
+		// Create a text object to display the active user count
+		this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {
+			fontFamily: 'Arial',
+			fontSize: '24px', 
+			fill: '#ffffff',
+			stroke: '#000',
+			strokeThickness: 8, 
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5, 
+				offsetY: 6, 
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		});
+	
+		this.activeUsersText.setDepth(80);
+	
+		// Function to fetch active users from the server
+		this.fetchActiveUsers = async () => {
+			try {
+				const response = await fetch('https://zusu.xyz/api/active-users');
+				const data = await response.json();
+				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
+			} catch (error) {
+				console.error('Error fetching active users:', error);
+			}
+		};
+	
+		// Function to update server with random user count changes
+		this.updateActiveUsers = async () => {
+			try {
+				const change = Phaser.Math.Between(-2, 2);
+				
+				const response = await fetch('https://zusu.xyz/api/update-active-users', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ change })
+				});
+				
+				const data = await response.json();
+				if (data.success) {
+					this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
+				}
+			} catch (error) {
+				console.error('Error updating active users:', error);
+			}
+		};
+	
+		// Initially fetch the active users count
+		this.fetchActiveUsers();
+	
+		// Periodically update the active users count every 5 seconds
+		this.time.addEvent({
+			delay: 5000,
+			callback: this.updateActiveUsers,
+			callbackScope: this,
+			loop: true
+		});
+	
+		// Play background music with looping enabled and volume set to 50%
+		this.backgroundMusic = this.sound.add('backgroundMusic', {
+			volume: 0.5,
+			loop: true 
+		});
+	
+		// Wait for user interaction to start the music
+		this.input.once('pointerdown', () => {
+			this.backgroundMusic.play();
+			console.log('Background music started after user interaction');
+		});
+	
+		// Handle tab visibility change
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'visible') {
+				if (!this.backgroundMusic.isPlaying) {
+					this.backgroundMusic.play();
+				}
+			}
+		});
+	
+		// Create a group for the backgrounds
+		this.backgroundGroup = this.add.group();
+	
+		// Create multiple background instances that will scroll
+		this.backgrounds = [];
+		const bgWidth = this.textures.get(assets.scene.background.day).getSourceImage().width;
+	
+		// Create two pairs of backgrounds (day and night)
+		for (let i = 0; i < 2; i++) {
+			// Create day background
+			const bgDay = this.add.image(i * bgWidth, 360, assets.scene.background.day);
+			bgDay.setOrigin(0, 0.5);
+			this.backgrounds.push(bgDay);
+			this.backgroundGroup.add(bgDay);
+	
+			// Create night background
+			const bgNight = this.add.image((i + 2) * bgWidth, 360, assets.scene.background.night);
+			bgNight.setOrigin(0, 0.5);
+			this.backgrounds.push(bgNight);
+			this.backgroundGroup.add(bgNight);
+		}
+	
+		// Set background scroll speed
+		this.backgroundScrollSpeed = 0.5;
+	
+		this.gaps = this.physics.add.group();
+		this.pipes = this.physics.add.group();
+	
+		// birds animation
+		Object.keys(assets.bird).forEach(function (key) {
+			game.anims.create({
+				key: assets.bird[key].clapWings,
+				frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
+					start: 0,
+					end: 2
+				}),
+				frameRate: 8,
+				repeat: -1
+			});
+	
+			game.anims.create({
+				key: assets.bird[key].stop,
+				frames: [{
+					key: assets.bird[key].name,
+					frame: 1
+				}],
+				frameRate: 20
+			});
+		});
+	
+		// ground 
+		this.ground = this.physics.add.sprite(assets.scene.width * 2, 936, assets.scene.ground);
+		this.ground.setCollideWorldBounds(true);
+		this.ground.setDepth(20);
+		this.ground.setSize(0, 300, 0, 0).setOffset(0, 8);
+	
+		this.anims.create({
+			key: assets.animation.ground.moving,
+			frames: this.anims.generateFrameNumbers(assets.scene.ground, {
+				start: 0,
+				end: 2
+			}),
+			frameRate: 15,
+			repeat: -1
+		});
+	
+		this.anims.create({
+			key: assets.animation.ground.moving,
+			frames: [{
+				key: assets.scene.ground,
+				frame: 0
+			}],
+			frameRate: 20
+		});
+	
+		// start, over, repeat
+		this.start = this.add.image(assets.scene.width * 2, 312, assets.scene.startGame);
+		this.start.setScale(2);
+		this.start.setDepth(30);
+		this.start.visible = false;
+	
+		this.gameOver = this.add.image(assets.scene.width * 2, 140, assets.scene.gameOver);
+		this.gameOver.setScale(2);
+		this.gameOver.setDepth(20);
+		this.gameOver.visible = false;
+	
+		this.restart = this.add.image(assets.scene.width * 2, 560, assets.scene.restartGame).setInteractive();
+		this.restart.setScale(2);
+		this.restart.setDepth(20);
+		this.restart.visible = false;
+		this.restart.on('pointerdown', () => this.restartGame(this));
+	
+		this.scoreboard = this.add.image(assets.scene.width * 2, 360, assets.scoreboard.score);
+		this.scoreboard.scale = 1;
+		this.scoreboard.setDepth(30);
+	
+		this.scoreTxt = this.add.text(assets.scene.width * 2, 80, '0', {
+			fontFamily: 'font1',
+			fontSize: '76px',
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 8,
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5,
+				offsetY: 6,
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		});
+		this.scoreTxt.setDepth(30);
+		this.scoreTxt.setOrigin(0.5);
+		this.scoreTxt.alpha = 0;
+	
+		this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', {
+			fontFamily: 'font1',
+			fontSize: '36px',
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 6,
+		});
+		this.scored.setDepth(30);
+		this.scored.setOrigin(0.5);
+	
+		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 420, '0', {
+			fontFamily: 'font1',
+			fontSize: '36px',
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 6,
+		});
+		this.bestScore.setDepth(30);
+		this.bestScore.setOrigin(0.5, 0.5);
+	
+		this.initGame();
+	}
 
-        // Add a flag to track leaderboard visibility
-        this.isLeaderboardVisible = false;
-    
-        // Create the leaderboard button after game over (initially hidden)
-        this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
-        this.leaderboardButtonGameOver.setScale(2); 
-        this.leaderboardButtonGameOver.setDepth(100);
-        this.leaderboardButtonGameOver.visible = false;
-        this.leaderboardButtonGameOver.on('pointerdown', () => {
-            this.toggleLeaderboard();
-        });
+	// Add a method to handle background scrolling
+	scrollBackgrounds() {
+		if (!this.hasGameStarted || this.isGameOver) return;
 
-        // Set the range for active users (matching server constraints)
-        this.minUsers = 400;
-        this.maxUsers = 900;
+		// Move each background
+		for (let bg of this.backgrounds) {
+			bg.x -= this.backgroundScrollSpeed;
 
-        // Create a text object to display the active user count
-        this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {
-            fontFamily: 'Arial',
-            fontSize: '24px', 
-            fill: '#ffffff',
-            stroke: '#000',
-            strokeThickness: 8, 
-            strokeLinecap: 'square',
-            shadow: {
-                offsetX: 5, 
-                offsetY: 6, 
-                color: '#000',
-                blur: 0,
-                stroke: true,
-                fill: true
-            }
-        });
+			// Get the width of the current background
+			const width = bg.width;
 
-        this.activeUsersText.setDepth(80);
-
-        // Function to fetch active users from the server
-        this.fetchActiveUsers = async () => {
-            try {
-                const response = await fetch('https://zusu.xyz/api/active-users');
-                const data = await response.json();
-                this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
-            } catch (error) {
-                console.error('Error fetching active users:', error);
-            }
-        };
-
-        // Function to update server with random user count changes
-        this.updateActiveUsers = async () => {
-            try {
-                // Generate a small random change (-2 to +2)
-                const change = Phaser.Math.Between(-2, 2);
-                
-                // Send the change to the server
-                const response = await fetch('https://zusu.xyz/api/update-active-users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ change })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
-                }
-            } catch (error) {
-                console.error('Error updating active users:', error);
-            }
-        };
-
-        // Initially fetch the active users count
-        this.fetchActiveUsers();
-
-        // Periodically update the active users count every 5 seconds
-        this.time.addEvent({
-            delay: 5000,
-            callback: this.updateActiveUsers,
-            callbackScope: this,
-            loop: true
-        });
-
-        // Play background music with looping enabled and volume set to 50%
-        this.backgroundMusic = this.sound.add('backgroundMusic', {
-            volume: 0.5,
-            loop: true 
-        });
-    
-        // Wait for user interaction (click, tap, etc.) to start the music
-        this.input.once('pointerdown', () => {
-            this.backgroundMusic.play();
-            console.log('Background music started after user interaction');
-        });
-    
-        // Handle tab visibility change manually
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                if (!this.backgroundMusic.isPlaying) {
-                    this.backgroundMusic.play();
-                }
-            }
-        });
-
-        // background
-        this.backgroundDay = this.add.image(assets.scene.width * 2, 360, assets.scene.background.day).setInteractive();
-        this.backgroundNight = this.add.image(assets.scene.width * 2, 360, assets.scene.background.night).setInteractive();
-        this.backgroundNight.visible = false;
-
-        this.gaps = this.physics.add.group();
-        this.pipes = this.physics.add.group();
-
-        // birds animation
-        Object.keys(assets.bird).forEach(function (key) {
-            game.anims.create({
-                key: assets.bird[key].clapWings,
-                frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
-                    start: 0,
-                    end: 2
-                }),
-                frameRate: 8,
-                repeat: -1
-            });
-
-            game.anims.create({
-                key: assets.bird[key].stop,
-                frames: [{
-                    key: assets.bird[key].name,
-                    frame: 1
-                }],
-                frameRate: 20
-            });
-        });
-
-        // ground 
-        this.ground = this.physics.add.sprite(assets.scene.width * 2, 936, assets.scene.ground);
-        this.ground.setCollideWorldBounds(true);
-        this.ground.setDepth(20);
-        this.ground.setSize(0, 300, 0, 0).setOffset(0, 8);
-
-        this.anims.create({
-            key: assets.animation.ground.moving,
-            frames: this.anims.generateFrameNumbers(assets.scene.ground, {
-                start: 0,
-                end: 2
-            }),
-            frameRate: 15,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: assets.animation.ground.moving,
-            frames: [{
-                key: assets.scene.ground,
-                frame: 0
-            }],
-            frameRate: 20
-        });
-
-        // start, over, repeat
-        this.start = this.add.image(assets.scene.width * 2, 312, assets.scene.startGame);
-        this.start.setScale(2);
-        this.start.setDepth(30);
-        this.start.visible = false;
-
-        this.gameOver = this.add.image(assets.scene.width * 2, 140, assets.scene.gameOver);
-        this.gameOver.setScale(2);
-        this.gameOver.setDepth(20);
-        this.gameOver.visible = false;
-
-        this.restart = this.add.image(assets.scene.width * 2, 560, assets.scene.restartGame).setInteractive();
-        this.restart.setScale(2);
-        this.restart.setDepth(20);
-        this.restart.visible = false;
-        this.restart.on('pointerdown', () => this.restartGame(this));
-
-        this.scoreboard = this.add.image(assets.scene.width * 2, 360, assets.scoreboard.score);
-        this.scoreboard.scale = 1;
-        this.scoreboard.setDepth(30);
-
-        this.scoreTxt = this.add.text(assets.scene.width * 2, 80, '0', {
-            fontFamily: 'font1',
-            fontSize: '76px',
-            fill: '#fff',
-            stroke: '#000',
-            strokeThickness: 8,
-            strokeLinecap: 'square',
-            shadow: {
-                offsetX: 5,
-                offsetY: 6,
-                color: '#000',
-                blur: 0,
-                stroke: true,
-                fill: true
-            }
-        });
-        this.scoreTxt.setDepth(30);
-        this.scoreTxt.setOrigin(0.5);
-        this.scoreTxt.alpha = 0;
-
-        this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', {
-            fontFamily: 'font1',
-            fontSize: '36px',
-            fill: '#fff',
-            stroke: '#000',
-            strokeThickness: 6,
-        });
-        this.scored.setDepth(30);
-        this.scored.setOrigin(0.5);
-
-        this.bestScore = this.add.text(assets.scene.width * 2 + 2, 420, '0', {
-            fontFamily: 'font1',
-            fontSize: '36px',
-            fill: '#fff',
-            stroke: '#000',
-            strokeThickness: 6,
-        });
-        this.bestScore.setDepth(30);
-        this.bestScore.setOrigin(0.5, 0.5);
-
-        this.initGame();
-    }
+			// If the background has moved completely off screen to the left
+			if (bg.x <= -width) {
+				// Find the rightmost background
+				let rightmostX = -Infinity;
+				for (let other of this.backgrounds) {
+					rightmostX = Math.max(rightmostX, other.x);
+				}
+				// Place this background right after the rightmost one
+				bg.x = rightmostX + width;
+			}
+		}
+	}
 
 	updateActiveUsers() {
 		// Fetch the active users count from the server
@@ -367,6 +409,8 @@ class FlappyBirdScene extends Phaser.Scene {
 	update(time, delta) {
 		if (this.isGameOver) return;
 		if (!this.hasGameStarted) return;
+
+		this.scrollBackgrounds();
 
 		// Restrict the bird from flying above the screen
 		if (this.flappyBird.y <= 40) {
@@ -486,15 +530,46 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 
 	restartGame(scene) {
+		// Hide leaderboard button
 		scene.leaderboardButtonGameOver.visible = false;
-		this.hasPlayedDeathSound = false; // Reset the flag for the next game
+		
+		// Reset death sound flag
+		this.hasPlayedDeathSound = false;
+		
+		// Clear existing game elements
 		scene.pipes.clear(true, true);
 		scene.gaps.clear(true, true);
 		scene.flappyBird.destroy();
+		
+		// Hide UI elements
 		scene.gameOver.visible = false;
 		scene.scoreboard.visible = false;
 		scene.restart.visible = false;
+		
+		// Reset score
 		scene.scoreTxt.setText('0');
+		
+		// Reset background positions
+		const bgWidth = this.textures.get(assets.scene.background.day).getSourceImage().width;
+		this.backgrounds.forEach((bg, index) => {
+			if (index < 2) { // First two are day backgrounds
+				bg.x = (index % 2) * bgWidth;
+			} else { // Last two are night backgrounds
+				bg.x = ((index % 2) + 2) * bgWidth;
+			}
+		});
+	
+		// Reset scrolling speed
+		this.backgroundScrollSpeed = 0.5;
+		
+		// Hide leaderboard if it's visible
+		if (this.isLeaderboardVisible) {
+			this.hideLeaderboard();
+		}
+		
+		// Reset any active timers or events if necessary
+		
+		// Re-initialize the game
 		scene.initGame();
 	}
 
