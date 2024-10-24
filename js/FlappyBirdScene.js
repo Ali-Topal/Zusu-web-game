@@ -58,8 +58,8 @@ class FlappyBirdScene extends Phaser.Scene {
         });
 
         // Set the range for active users (matching server constraints)
-        this.minUsers = 100;
-        this.maxUsers = 500;
+        this.minUsers = 400;
+        this.maxUsers = 900;
 
         // Create a text object to display the active user count
         this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {

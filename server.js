@@ -21,7 +21,7 @@ app.get('/', function (req, res) {
 });
 
 // In-memory storage (for now, can use a database later)
-let activeUsers = 300; // Default number of active users
+let activeUsers = 650; // Default number of active users
 let users = {}; // Store wallet addresses and usernames
 let scores = {}; // Store user high scores by their unique username
 
@@ -37,8 +37,8 @@ app.post('/api/update-active-users', (req, res) => {
         activeUsers += change;
 
         // Ensure the active users count stays within a reasonable range
-        if (activeUsers < 100) activeUsers = 100;
-        if (activeUsers > 500) activeUsers = 500;
+        if (activeUsers < 100) activeUsers = 400;
+        if (activeUsers > 500) activeUsers = 900;
 
         res.json({ success: true, activeUsers });
     } else {
