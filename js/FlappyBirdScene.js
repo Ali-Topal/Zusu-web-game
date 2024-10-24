@@ -58,8 +58,8 @@ class FlappyBirdScene extends Phaser.Scene {
 		});
 
 		// Set the range for the random number of active users
-		this.minUsers = 300;  // Minimum number of active users
-		this.maxUsers = 800;  // Maximum number of active users
+		this.minUsers = 400;  // Minimum number of active users
+		this.maxUsers = 1300;  // Maximum number of active users
 	
 		// Initialize the active user count with a random value between minUsers and maxUsers
 		this.currentUsers = Phaser.Math.Between(this.minUsers, this.maxUsers);
@@ -276,7 +276,7 @@ class FlappyBirdScene extends Phaser.Scene {
 
 	showLeaderboard() {
 		// Fetch the leaderboard data from the server
-		fetch('http://localhost:3000/api/leaderboard')
+		fetch('https://zusu.xyz/api/leaderboard')
 			.then(response => response.json())
 			.then(data => {
 				console.log('Leaderboard:', data.leaderboard);
@@ -434,7 +434,7 @@ class FlappyBirdScene extends Phaser.Scene {
             this.hasPlayedDeathSound = true; 
 
 			// Submit the score to the server
-			fetch('http://localhost:3000/api/submit-score', {
+			fetch('https://zusu.xyz/api/submit-score', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
