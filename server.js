@@ -37,8 +37,8 @@ app.post('/api/update-active-users', (req, res) => {
         activeUsers += change;
 
         // Ensure the active users count stays within a reasonable range
-        if (activeUsers < 100) activeUsers = 400;
-        if (activeUsers > 500) activeUsers = 900;
+        if (activeUsers < 400) activeUsers = 400;
+        if (activeUsers > 900) activeUsers = 900;
 
         res.json({ success: true, activeUsers });
     } else {
