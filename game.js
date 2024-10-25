@@ -87,7 +87,7 @@ function addButtonClickListeners() {
         console.log("Button 1 found in DOM");
         button1.onclick = function() {
             console.log("Button 1 clicked");
-            window.open('https://tenor.com/en-GB/view/two-black-people-gif-27160499', '_blank');  // Redirect to the first link
+            window.open('https://x.com/zususol', '_blank');  // Redirect to X
         };
     } else {
         console.error("Button 1 not found in DOM");
@@ -97,7 +97,7 @@ function addButtonClickListeners() {
         console.log("Button 2 found in DOM");
         button2.onclick = function() {
             console.log("Button 2 clicked");
-            window.open('https://tenor.com/en-GB/view/two-black-people-gif-27160499', '_blank'); // Redirect to the second link
+            window.open('https://T.me/zususol', '_blank'); // Redirect to telegram
         };
     } else {
         console.error("Button 2 not found in DOM");
@@ -107,7 +107,7 @@ function addButtonClickListeners() {
         console.log("Button 3 found in DOM");
         button3.onclick = function() {
             console.log("Button 3 clicked");
-            window.open('https://tenor.com/en-GB/view/two-black-people-gif-27160499', '_blank'); // Redirect to the second link
+            window.open('https://tenor.com/en-GB/view/two-black-people-gif-27160499', '_blank'); // Redirect to pumpfun
         };
     } else {
         console.error("Button 3 not found in DOM");
