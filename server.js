@@ -69,15 +69,22 @@ app.post('/api/submit-score', (req, res) => {
     res.json({ success: true, message: "Score submitted successfully" });
 });
 
-// API endpoint to retrieve leaderboard (top 10 scores)
+// API endpoint to retrieve leaderboard (top 5 scores)
 app.get('/api/leaderboard', (req, res) => {
-    // Sort users by score and return the top 10
+    // Sort users by score and return the top 5
     const leaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
+        .slice(0, 5)
         .map(([username, score]) => ({ username, score }));
 
     res.json({ leaderboard });
+});
+
+// API endpoint to check username availability
+app.post('/api/check-username', (req, res) => {
+    const { username } = req.body;
+    const isAvailable = !Object.values(users).some(user => user.username === username);
+    res.json({ available: isAvailable });
 });
 
 // Start the server and listen on port 3000 or process.env.port

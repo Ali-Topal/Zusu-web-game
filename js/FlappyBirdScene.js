@@ -44,6 +44,11 @@ class FlappyBirdScene extends Phaser.Scene {
 
 	create() {
 		let game = this;
+
+		this.username = localStorage.getItem('flappyUsername');
+    	if (!this.username) {
+        	this.generateUsername();
+    	}
 	
 		// Add a flag to track leaderboard visibility
 		this.isLeaderboardVisible = false;
@@ -309,6 +314,16 @@ class FlappyBirdScene extends Phaser.Scene {
 		}
 	}
 
+	generateUsername() {
+		const generateNumber = () => {
+			return Math.floor(10000 + Math.random() * 90000).toString();
+		};
+	
+		const username = `User${generateNumber()}`;
+		this.username = username;
+		localStorage.setItem('flappyUsername', username);
+	}
+
 	updateActiveUsers() {
 		// Fetch the active users count from the server
 		fetch('https://zusu.xyz/api/active-users')
@@ -368,42 +383,81 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 	
 	displayLeaderboard(leaderboard) {
-		this.isLeaderboardVisible = true; // Mark the leaderboard as visible
+		this.isLeaderboardVisible = true;
 	
-		// Create a semi-transparent backdrop to cover the screen
+		// Create backdrop
 		this.leaderboardBackdrop = this.add.graphics();
-		this.leaderboardBackdrop.fillStyle(0x000000, 0.8); // Black color with 70% opacity
-		this.leaderboardBackdrop.fillRect(0, 0, this.sys.game.config.width, 720); // Doubled height
-		this.leaderboardBackdrop.setDepth(99); // Ensure it's behind the leaderboard but above the game
+		this.leaderboardBackdrop.fillStyle(0x000000, 0.8);
+		this.leaderboardBackdrop.fillRect(0, 0, this.sys.game.config.width, 720);
+		this.leaderboardBackdrop.setDepth(99);
 	
-		// Clear any previous leaderboard text
+		// Clear any existing leaderboard
 		if (this.leaderboardText) {
 			this.leaderboardText.destroy();
 		}
 	
-		// Create a text object for the leaderboard (position it in the center)
-		let leaderboardText = '';
-		leaderboard.forEach((entry, index) => {
-			leaderboardText += `${index + 1}. ${entry.username}: ${entry.score}\n`;
-		});
-
-		this.leaderboardText = this.add.text(this.sys.game.config.width / 2, 300, leaderboardText, {
+		// Create header text
+		const headerText = this.add.text(this.sys.game.config.width / 2, 200, 'TOP SCORES', {
 			fontFamily: 'font1',
-			fontSize: '36px', 
+			fontSize: '48px',
 			fill: '#fff',
 			stroke: '#000',
-			strokeThickness: 8, 
-			strokeLinecap: 'square',
-			shadow: {
-				offsetX: 5, 
-				offsetY: 6, 
-				color: '#000',
-				blur: 0,
-				stroke: true,
-				fill: true
-			}
-		}).setDepth(100) 
-		.setOrigin(0.5, 0.5); 
+			strokeThickness: 8
+		}).setOrigin(0.5).setDepth(100);
+	
+		// Find current user's position and score
+		const currentUserEntry = leaderboard.find(entry => entry.username === this.username);
+		const currentUserPosition = leaderboard.findIndex(entry => entry.username === this.username) + 1;
+	
+		// Display top 5 scores
+		let yPosition = 280;
+		const entrySpacing = 50;
+	
+		// Only show top 5 scores
+		leaderboard.slice(0, 5).forEach((entry, index) => {
+			const isCurrentUser = entry.username === this.username;
+			const textColor = isCurrentUser ? '#FFD700' : '#FFFFFF'; // Gold for current user in top 5
+	
+			this.add.text(
+				this.sys.game.config.width / 2,
+				yPosition + (index * entrySpacing),
+				`${index + 1}. ${entry.username}: ${entry.score}`,
+				{
+					fontFamily: 'font1',
+					fontSize: '36px',
+					fill: textColor,
+					stroke: '#000',
+					strokeThickness: 8
+				}
+			).setOrigin(0.5).setDepth(100);
+		});
+	
+		// If current user is not in top 5 but has a score, show their score below
+		if (currentUserEntry && currentUserPosition > 5) {
+			// Add separator line
+			const separatorLine = this.add.graphics();
+			separatorLine.lineStyle(2, 0xFFFFFF, 1);
+			separatorLine.lineBetween(
+				this.sys.game.config.width / 2 - 200,
+				yPosition + (5 * entrySpacing),
+				this.sys.game.config.width / 2 + 200,
+				yPosition + (5 * entrySpacing)
+			).setDepth(100);
+	
+			// Add user's score below separator
+			this.add.text(
+				this.sys.game.config.width / 2,
+				yPosition + (5.5 * entrySpacing),
+				`${currentUserPosition}. ${currentUserEntry.username}: ${currentUserEntry.score}`,
+				{
+					fontFamily: 'font1',
+					fontSize: '36px',
+					fill: '#00FF00', // Green color for current user outside top 5
+					stroke: '#000',
+					strokeThickness: 8
+				}
+			).setOrigin(0.5).setDepth(100);
+		}
 	}
 
 	update(time, delta) {
