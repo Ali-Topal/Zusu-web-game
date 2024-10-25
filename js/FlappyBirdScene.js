@@ -264,7 +264,7 @@ class FlappyBirdScene extends Phaser.Scene {
 	
 		this.scored = this.add.text(assets.scene.width * 2 + 2, 350, '0', { //340
 			fontFamily: 'font1',
-			fontSize: '44px',  //36px
+			fontSize: '48px',  //36px
 			fill: '#fff',
 			stroke: '#000',
 			strokeThickness: 6,
@@ -274,7 +274,7 @@ class FlappyBirdScene extends Phaser.Scene {
 	
 		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 470, '0', { //420
 			fontFamily: 'font1',
-			fontSize: '44px',
+			fontSize: '48px',
 			fill: '#fff',
 			stroke: '#000',
 			strokeThickness: 6,
