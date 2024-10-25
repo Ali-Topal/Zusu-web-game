@@ -365,20 +365,39 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 
 	hideLeaderboard() {
-    	this.isLeaderboardVisible = false; // Mark the leaderboard as hidden
-
-    	// Destroy the leaderboard text to hide it
-    	if (this.leaderboardText) {
-        	this.leaderboardText.destroy();
-        	this.leaderboardText = null;
-    	}
-
+		this.isLeaderboardVisible = false;
+	
+		// Destroy the leaderboard backdrop
 		if (this.leaderboardBackdrop) {
 			this.leaderboardBackdrop.destroy();
 			this.leaderboardBackdrop = null;
 		}
-
-		// Re-enable the restart button when the leaderboard is hidden
+	
+		// Destroy the header text
+		if (this.headerText) {
+			this.headerText.destroy();
+			this.headerText = null;
+		}
+	
+		// Destroy all score texts
+		if (this.scoreTexts) {
+			this.scoreTexts.forEach(text => text.destroy());
+			this.scoreTexts = [];
+		}
+	
+		// Destroy separator line if it exists
+		if (this.separatorLine) {
+			this.separatorLine.destroy();
+			this.separatorLine = null;
+		}
+	
+		// Destroy user score text if it exists
+		if (this.userScoreText) {
+			this.userScoreText.destroy();
+			this.userScoreText = null;
+		}
+	
+		// Re-enable the restart button
 		this.restart.setInteractive();
 	}
 	
@@ -391,13 +410,11 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.leaderboardBackdrop.fillRect(0, 0, this.sys.game.config.width, 720);
 		this.leaderboardBackdrop.setDepth(99);
 	
-		// Clear any existing leaderboard
-		if (this.leaderboardText) {
-			this.leaderboardText.destroy();
-		}
+		// Initialize array to store score texts
+		this.scoreTexts = [];
 	
 		// Create header text
-		const headerText = this.add.text(this.sys.game.config.width / 2, 200, 'TOP SCORES', {
+		this.headerText = this.add.text(this.sys.game.config.width / 2, 200, 'TOP SCORES', {
 			fontFamily: 'font1',
 			fontSize: '48px',
 			fill: '#fff',
@@ -413,12 +430,12 @@ class FlappyBirdScene extends Phaser.Scene {
 		let yPosition = 280;
 		const entrySpacing = 50;
 	
-		// Only show top 5 scores
+		// Show top 5 scores
 		leaderboard.slice(0, 5).forEach((entry, index) => {
 			const isCurrentUser = entry.username === this.username;
-			const textColor = isCurrentUser ? '#FFD700' : '#FFFFFF'; // Gold for current user in top 5
+			const textColor = isCurrentUser ? '#FFD700' : '#FFFFFF';
 	
-			this.add.text(
+			const scoreText = this.add.text(
 				this.sys.game.config.width / 2,
 				yPosition + (index * entrySpacing),
 				`${index + 1}. ${entry.username}: ${entry.score}`,
@@ -430,14 +447,16 @@ class FlappyBirdScene extends Phaser.Scene {
 					strokeThickness: 8
 				}
 			).setOrigin(0.5).setDepth(100);
+	
+			this.scoreTexts.push(scoreText);
 		});
 	
 		// If current user is not in top 5 but has a score, show their score below
 		if (currentUserEntry && currentUserPosition > 5) {
 			// Add separator line
-			const separatorLine = this.add.graphics();
-			separatorLine.lineStyle(2, 0xFFFFFF, 1);
-			separatorLine.lineBetween(
+			this.separatorLine = this.add.graphics();
+			this.separatorLine.lineStyle(2, 0xFFFFFF, 1);
+			this.separatorLine.lineBetween(
 				this.sys.game.config.width / 2 - 200,
 				yPosition + (5 * entrySpacing),
 				this.sys.game.config.width / 2 + 200,
@@ -445,14 +464,14 @@ class FlappyBirdScene extends Phaser.Scene {
 			).setDepth(100);
 	
 			// Add user's score below separator
-			this.add.text(
+			this.userScoreText = this.add.text(
 				this.sys.game.config.width / 2,
 				yPosition + (5.5 * entrySpacing),
 				`${currentUserPosition}. ${currentUserEntry.username}: ${currentUserEntry.score}`,
 				{
 					fontFamily: 'font1',
 					fontSize: '36px',
-					fill: '#00FF00', // Green color for current user outside top 5
+					fill: '#00FF00',
 					stroke: '#000',
 					strokeThickness: 8
 				}
