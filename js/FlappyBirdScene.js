@@ -321,7 +321,7 @@ class FlappyBirdScene extends Phaser.Scene {
 			return Math.floor(10000 + Math.random() * 90000).toString();
 		};
 	
-		const username = `User${generateNumber()}`;
+		const username = `ZUSU${generateNumber()}`;
 		this.username = username;
 		localStorage.setItem('flappyUsername', username);
 	}

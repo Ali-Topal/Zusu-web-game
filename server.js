@@ -51,7 +51,7 @@ app.post('/api/airdrop', (req, res) => {
     const { walletAddress } = req.body;
 
     // Generate a random username
-    const username = `User${Math.floor(1000 + Math.random() * 9000)}`;
+    const username = `ZUSU${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Store the wallet address and username
     users[walletAddress] = { username, walletAddress };
