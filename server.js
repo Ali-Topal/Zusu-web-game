@@ -63,10 +63,16 @@ app.post('/api/airdrop', (req, res) => {
 app.post('/api/submit-score', (req, res) => {
     const { username, score } = req.body;
 
-    // Store the score for the user
-    scores[username] = score;
+    // Only update the score if it's higher than the existing score
+    if (!scores[username] || score > scores[username]) {
+        scores[username] = score;
+    }
 
-    res.json({ success: true, message: "Score submitted successfully" });
+    res.json({ 
+        success: true, 
+        message: "Score submitted successfully",
+        highScore: scores[username]  // Return the user's high score
+    });
 });
 
 // API endpoint to retrieve leaderboard (top 5 scores)
@@ -74,7 +80,6 @@ app.get('/api/leaderboard', (req, res) => {
     // Sort users by score and return the top 5
     const leaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
         .map(([username, score]) => ({ username, score }));
 
     res.json({ leaderboard });

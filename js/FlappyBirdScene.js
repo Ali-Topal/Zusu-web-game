@@ -50,6 +50,8 @@ class FlappyBirdScene extends Phaser.Scene {
         	this.generateUsername();
     	}
 	
+		this.highScore = 0;
+
 		// Add a flag to track leaderboard visibility
 		this.isLeaderboardVisible = false;
 	
@@ -463,11 +465,11 @@ class FlappyBirdScene extends Phaser.Scene {
 				yPosition + (5 * entrySpacing)
 			).setDepth(100);
 	
-			// Add user's score below separator
+			// Add user's high score below separator
 			this.userScoreText = this.add.text(
 				this.sys.game.config.width / 2,
 				yPosition + (5.5 * entrySpacing),
-				`${currentUserPosition}. ${currentUserEntry.username}: ${currentUserEntry.score}`,
+				`${currentUserPosition}. ${this.username}: ${this.highScore}`,
 				{
 					fontFamily: 'font1',
 					fontSize: '36px',
@@ -582,6 +584,7 @@ class FlappyBirdScene extends Phaser.Scene {
 			.then(data => {
 				if (data.success) {
 					console.log('Score submitted successfully:', this.score);
+					this.highScore = data.highScore;
 				}
 			})
 			.catch(error => console.error('Error submitting score:', error));
