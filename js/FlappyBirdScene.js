@@ -262,7 +262,7 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreTxt.setOrigin(0.5);
 		this.scoreTxt.alpha = 0;
 	
-		this.scored = this.add.text(assets.scene.width * 2 + 2, 350, '0', { //340
+		this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', { //340
 			fontFamily: 'font1',
 			fontSize: '48px',  //36px
 			fill: '#fff',
@@ -272,7 +272,7 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scored.setDepth(30);
 		this.scored.setOrigin(0.5);
 	
-		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 470, '0', { //420
+		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 460, '0', { //420
 			fontFamily: 'font1',
 			fontSize: '48px',
 			fill: '#fff',
