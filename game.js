@@ -35,12 +35,26 @@ window.onload = function() {
             width: 576, // Game width
             height: 1024, // Game height
             autoCenter: Phaser.Scale.CENTER_BOTH,
+            autoRound: true,
+            expandParent: true,
+            min: {
+                width: 288,
+                height: 512
+            },
+            max: {
+                width: 768,
+                height: 1366
+            }
         },
         pixelArt: true,
         scene : [ FlappyBirdScene ],
         autoFocus: true,
         input: {
-            activePointers: 1
+            activePointers: 2,
+            touch: {
+                capture: true,
+                maxTouchPoints: 2
+            }
         },
         // Key config for tab focus handling
         visibility: {
