@@ -46,17 +46,36 @@ class FlappyBirdScene extends Phaser.Scene {
 
 	create() {
 		let game = this;
-
+	
+		// Initialize username
 		this.username = localStorage.getItem('flappyUsername');
-    	if (!this.username) {
-        	this.generateUsername();
-    	}
+		if (!this.username) {
+			this.generateUsername();
+		}
 	
 		this.highScore = 0;
-
-		// Add a flag to track leaderboard visibility
 		this.isLeaderboardVisible = false;
 	
+		// Create non-text game elements
+		this.setupGameElements();
+	
+		// Handle font loading properly
+		if (document.fonts && document.fonts.load) {
+			document.fonts.load('24px font1').then(() => {
+				this.createGameText();
+				this.setupGameUpdates();
+			}).catch(() => {
+				this.createGameText();
+				this.setupGameUpdates();
+			});
+		} else {
+			this.createGameText();
+			this.setupGameUpdates();
+		}
+	}
+	
+	// Add these new methods
+	setupGameElements() {
 		// Create the leaderboard button after game over (initially hidden)
 		this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
 		this.leaderboardButtonGameOver.setScale(2); 
@@ -66,82 +85,11 @@ class FlappyBirdScene extends Phaser.Scene {
 			this.toggleLeaderboard();
 		});
 	
-		// Set the range for active users (matching server constraints)
+		// Set range for active users
 		this.minUsers = 100;
 		this.maxUsers = 500;
-
-		const fontCheck = setInterval(() => {
-			if (document.fonts.check('1em font1')) {
-				clearInterval(fontCheck);
-				this.createTextObjects();
-			}
-		}, 50);
 	
-		// Create a text object to display the active user count
-		this.activeUsersText = this.add.text(150, 0, 'Active Players: 0', {
-			fontFamily: 'font1',
-			fontSize: '24px', 
-			fill: '#ffffff',
-			stroke: '#000',
-			strokeThickness: 8, 
-			strokeLinecap: 'square',
-			shadow: {
-				offsetX: 5, 
-				offsetY: 6, 
-				color: '#000',
-				blur: 0,
-				stroke: true,
-				fill: true
-			}
-		});
-	
-		this.activeUsersText.setDepth(80);
-	
-		// Function to fetch active users from the server
-		this.fetchActiveUsers = async () => {
-			try {
-				const response = await fetch('https://zusu.xyz/api/active-users');
-				const data = await response.json();
-				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
-			} catch (error) {
-				console.error('Error fetching active users:', error);
-			}
-		};
-	
-		// Function to update server with random user count changes
-		this.updateActiveUsers = async () => {
-			try {
-				const change = Phaser.Math.Between(-2, 2);
-				
-				const response = await fetch('https://zusu.xyz/api/update-active-users', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({ change })
-				});
-				
-				const data = await response.json();
-				if (data.success) {
-					this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
-				}
-			} catch (error) {
-				console.error('Error updating active users:', error);
-			}
-		};
-	
-		// Initially fetch the active users count
-		this.fetchActiveUsers();
-	
-		// Periodically update the active users count every 5 seconds
-		this.time.addEvent({
-			delay: 5000,
-			callback: this.updateActiveUsers,
-			callbackScope: this,
-			loop: true
-		});
-	
-		// Play background music with looping enabled and volume set to 50%
+		// Play background music
 		this.backgroundMusic = this.sound.add('backgroundMusic', {
 			volume: 0.5,
 			loop: true 
@@ -162,35 +110,31 @@ class FlappyBirdScene extends Phaser.Scene {
 			}
 		});
 	
-		// Create a group for the backgrounds
+		// Create backgrounds
 		this.backgroundGroup = this.add.group();
-	
-		// Create multiple background instances that will scroll
 		this.backgrounds = [];
 		const bgWidth = this.textures.get(assets.scene.background.day).getSourceImage().width;
 	
 		// Create two pairs of backgrounds (day and night)
 		for (let i = 0; i < 2; i++) {
-			// Create day background
 			const bgDay = this.add.image(i * bgWidth, 360, assets.scene.background.day);
 			bgDay.setOrigin(0, 0.5);
 			this.backgrounds.push(bgDay);
 			this.backgroundGroup.add(bgDay);
 	
-			// Create night background
 			const bgNight = this.add.image((i + 2) * bgWidth, 360, assets.scene.background.night);
 			bgNight.setOrigin(0, 0.5);
 			this.backgrounds.push(bgNight);
 			this.backgroundGroup.add(bgNight);
 		}
 	
-		// Set background scroll speed
 		this.backgroundScrollSpeed = 0.5;
 	
+		// Create game groups
 		this.gaps = this.physics.add.group();
 		this.pipes = this.physics.add.group();
 	
-		// birds animation
+		// Bird animations
 		Object.keys(assets.bird).forEach(function (key) {
 			game.anims.create({
 				key: assets.bird[key].clapWings,
@@ -212,12 +156,13 @@ class FlappyBirdScene extends Phaser.Scene {
 			});
 		});
 	
-		// ground 
+		// Ground setup
 		this.ground = this.physics.add.sprite(assets.scene.width * 2, 936, assets.scene.ground);
 		this.ground.setCollideWorldBounds(true);
 		this.ground.setDepth(20);
 		this.ground.setSize(0, 300, 0, 0).setOffset(0, 8);
 	
+		// Ground animations
 		this.anims.create({
 			key: assets.animation.ground.moving,
 			frames: this.anims.generateFrameNumbers(assets.scene.ground, {
@@ -237,7 +182,7 @@ class FlappyBirdScene extends Phaser.Scene {
 			frameRate: 20
 		});
 	
-		// start, over, repeat
+		// UI elements
 		this.start = this.add.image(assets.scene.width * 2, 312, assets.scene.startGame);
 		this.start.setScale(2);
 		this.start.setDepth(30);
@@ -257,47 +202,21 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreboard = this.add.image(assets.scene.width * 2, 360, assets.scoreboard.score);
 		this.scoreboard.scale = 1;
 		this.scoreboard.setDepth(30);
+	}
 	
-		this.scoreTxt = this.add.text(assets.scene.width * 2, 80, '0', {
-			fontFamily: 'font1',
-			fontSize: '76px',
-			fill: '#fff',
-			stroke: '#000',
-			strokeThickness: 8,
-			strokeLinecap: 'square',
-			shadow: {
-				offsetX: 5,
-				offsetY: 6,
-				color: '#000',
-				blur: 0,
-				stroke: true,
-				fill: true
-			}
+	setupGameUpdates() {
+		// Initially fetch the active users count
+		this.fetchActiveUsers();
+	
+		// Periodically update the active users count
+		this.time.addEvent({
+			delay: 5000,
+			callback: this.updateActiveUsers,
+			callbackScope: this,
+			loop: true
 		});
-		this.scoreTxt.setDepth(30);
-		this.scoreTxt.setOrigin(0.5);
-		this.scoreTxt.alpha = 0;
 	
-		this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', { //340
-			fontFamily: 'font1',
-			fontSize: '48px',  //36px
-			fill: '#fff',
-			stroke: '#000',
-			strokeThickness: 6,
-		});
-		this.scored.setDepth(30);
-		this.scored.setOrigin(0.5);
-	
-		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 460, '0', { //420
-			fontFamily: 'font1',
-			fontSize: '48px',
-			fill: '#fff',
-			stroke: '#000',
-			strokeThickness: 6,
-		});
-		this.bestScore.setDepth(30);
-		this.bestScore.setOrigin(0.5, 0.5);
-	
+		// Initialize the game
 		this.initGame();
 	}
 
@@ -673,10 +592,10 @@ class FlappyBirdScene extends Phaser.Scene {
 				this.currentPipe = assets.obstacle.pipe.red;
 		}
 		
-		setTimeout(() => {
+		this.time.delayedCall(400, () => {
 			this.sound.play('pointSound', { volume: 0.2 });
 			this.scoreTxt.setText(this.score);
-		}, 400);
+		}, [], this);
 	}
 
 	startGame() {
