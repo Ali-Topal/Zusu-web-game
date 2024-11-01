@@ -337,7 +337,6 @@ class FlappyBirdScene extends Phaser.Scene {
 			}
 	
 			const data = await response.json();
-			console.log('Server response:', data); // Debug log
 	
 			if (this.activeUsersText && data.success) {
 				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
