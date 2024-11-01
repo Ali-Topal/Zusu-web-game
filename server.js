@@ -38,7 +38,7 @@ app.use('/api/', apiLimiter);
 app.use('/api/active-users', activeUsersLimiter);
 
 // In-memory storage with backup
-let activeUsers = 650;
+let activeUsers = Math.floor(Math.random() * (900 - 400) + 400); // Random between 400-900
 let users = {};
 let scores = {};
 let cachedLeaderboard = null;
@@ -80,9 +80,19 @@ app.get('/api/active-users', (req, res) => {
 app.post('/api/update-active-users', (req, res) => {
     requestCount++;
     const { change } = req.body;
-    if (change) {
-        activeUsers += change;
+    
+    // Add random fluctuation
+    const randomChange = Math.floor(Math.random() * 10) - 5; // Random number between -5 and +5
+    
+    if (typeof change === 'number') {
+        // Apply both the requested change and random fluctuation
+        activeUsers += change + randomChange;
+        
+        // Ensure the active users count stays within bounds
         activeUsers = Math.min(Math.max(activeUsers, 400), 900);
+        
+        console.log('Active users updated to:', activeUsers); // Debug log
+        
         res.json({ success: true, activeUsers });
     } else {
         res.status(400).json({ success: false, message: "Invalid request" });
