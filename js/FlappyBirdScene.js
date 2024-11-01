@@ -78,7 +78,7 @@ class FlappyBirdScene extends Phaser.Scene {
 		}, 50);
 	
 		// Create a text object to display the active user count
-		this.activeUsersText = this.add.text(165, 0, 'Active Players: 0', {
+		this.activeUsersText = this.add.text(160, 0, 'Active Players: 0', {
 			fontFamily: 'font1',
 			fontSize: '24px', 
 			fill: '#ffffff',
