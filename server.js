@@ -94,7 +94,7 @@ app.post('/api/update-active-users', (req, res) => {
         // Update the actual value
         activeUsers = newCount;
         
-        console.log('Updated active users from POST:', activeUsers); // Debug log
+        // console.log('Updated active users from POST:', activeUsers); // Debug log
         
         res.json({ 
             success: true, 
