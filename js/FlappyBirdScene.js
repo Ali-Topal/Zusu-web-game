@@ -46,6 +46,16 @@ class FlappyBirdScene extends Phaser.Scene {
 
 	create() {
 		let game = this;
+
+		fetchActiveUsers = async () => {
+			try {
+				const response = await fetch('https://zusu.xyz/api/active-users');
+				const data = await response.json();
+				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
+			} catch (error) {
+				console.error('Error fetching active users:', error);
+			}
+		};
 	
 		// Initialize username
 		this.username = localStorage.getItem('flappyUsername');
