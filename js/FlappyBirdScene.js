@@ -22,6 +22,8 @@ class FlappyBirdScene extends Phaser.Scene {
 			frameHeight: 320 // Doubled from 160
 		});
 
+		this.load.binary('myfont', 'assets/myfont.woff');
+
 		this.load.image(assets.scene.startGame, 'assets/startgame.png');
 		this.load.image(assets.scene.gameOver, 'assets/gameover.png');
 		this.load.image(assets.scene.restartGame, 'assets/restart-button.png');
@@ -67,6 +69,13 @@ class FlappyBirdScene extends Phaser.Scene {
 		// Set the range for active users (matching server constraints)
 		this.minUsers = 100;
 		this.maxUsers = 500;
+
+		const fontCheck = setInterval(() => {
+			if (document.fonts.check('1em font1')) {
+				clearInterval(fontCheck);
+				this.createTextObjects();
+			}
+		}, 50);
 	
 		// Create a text object to display the active user count
 		this.activeUsersText = this.add.text(180, 0, 'Active Players: 0', {
