@@ -20,7 +20,6 @@ window.onload = function() {
                 debug: false
             }
         },
-        scene: [LoadingScene, FlappyBirdScene],
 
         audio: {
             disableWebAudio: false  // Web Audio API is enabled
