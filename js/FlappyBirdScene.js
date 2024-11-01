@@ -74,8 +74,9 @@ class FlappyBirdScene extends Phaser.Scene {
 		}
 	}
 	
-	// Add these new methods
 	setupGameElements() {
+		// Removed 'let game = this' since we'll use 'this' directly
+	
 		// Create the leaderboard button after game over (initially hidden)
 		this.leaderboardButtonGameOver = this.add.image(assets.scene.width * 2, 650, assets.scene.leaderboardButtonGameOver).setInteractive();
 		this.leaderboardButtonGameOver.setScale(2); 
@@ -135,10 +136,10 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.pipes = this.physics.add.group();
 	
 		// Bird animations
-		Object.keys(assets.bird).forEach(function (key) {
-			game.anims.create({
+		Object.keys(assets.bird).forEach((key) => { // Changed to arrow function to preserve 'this'
+			this.anims.create({
 				key: assets.bird[key].clapWings,
-				frames: game.anims.generateFrameNumbers(assets.bird[key].name, {
+				frames: this.anims.generateFrameNumbers(assets.bird[key].name, {
 					start: 0,
 					end: 2
 				}),
@@ -146,7 +147,7 @@ class FlappyBirdScene extends Phaser.Scene {
 				repeat: -1
 			});
 	
-			game.anims.create({
+			this.anims.create({
 				key: assets.bird[key].stop,
 				frames: [{
 					key: assets.bird[key].name,
