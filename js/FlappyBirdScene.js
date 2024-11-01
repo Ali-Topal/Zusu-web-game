@@ -323,8 +323,6 @@ class FlappyBirdScene extends Phaser.Scene {
 		try {
 			// Generate a more significant change
 			const change = Math.floor(Math.random() * 21) - 10; // -10 to +10
-			
-			console.log('Sending change request:', change); // Debug log
 	
 			const response = await fetch('https://zusu.xyz/api/update-active-users', {
 				method: 'POST',
@@ -342,7 +340,6 @@ class FlappyBirdScene extends Phaser.Scene {
 			console.log('Server response:', data); // Debug log
 	
 			if (this.activeUsersText && data.success) {
-				console.log(`Updating display from ${this.activeUsersText.text} to: Active Players: ${data.activeUsers}`);
 				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
 			}
 		} catch (error) {
