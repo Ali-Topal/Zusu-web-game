@@ -51,16 +51,6 @@ class FlappyBirdScene extends Phaser.Scene {
     	if (!this.username) {
         	this.generateUsername();
     	}
-
-		if (document.fonts && document.fonts.load) {
-			document.fonts.load('24px font1').then(() => {
-				this.createGameText();
-			}).catch(() => {
-				this.createGameText();
-			});
-		} else {
-			this.createGameText();
-		}
 	
 		this.highScore = 0;
 
@@ -79,6 +69,33 @@ class FlappyBirdScene extends Phaser.Scene {
 		// Set the range for active users (matching server constraints)
 		this.minUsers = 100;
 		this.maxUsers = 500;
+
+		const fontCheck = setInterval(() => {
+			if (document.fonts.check('1em font1')) {
+				clearInterval(fontCheck);
+				this.createTextObjects();
+			}
+		}, 50);
+	
+		// Create a text object to display the active user count
+		this.activeUsersText = this.add.text(150, 0, 'Active Players: 0', {
+			fontFamily: 'font1',
+			fontSize: '24px', 
+			fill: '#ffffff',
+			stroke: '#000',
+			strokeThickness: 8, 
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5, 
+				offsetY: 6, 
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		});
+	
+		this.activeUsersText.setDepth(80);
 	
 		// Function to fetch active users from the server
 		this.fetchActiveUsers = async () => {
@@ -241,30 +258,6 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreboard.scale = 1;
 		this.scoreboard.setDepth(30);
 	
-		this.initGame();
-	}
-
-	createGameText() {
-		// Create active users text
-		this.activeUsersText = this.add.text(150, 0, 'Active Players: 0', {
-			fontFamily: 'font1',
-			fontSize: '24px', 
-			fill: '#ffffff',
-			stroke: '#000',
-			strokeThickness: 8, 
-			strokeLinecap: 'square',
-			shadow: {
-				offsetX: 5, 
-				offsetY: 6, 
-				color: '#000',
-				blur: 0,
-				stroke: true,
-				fill: true
-			}
-		});
-		this.activeUsersText.setDepth(80);
-	
-		// Score text
 		this.scoreTxt = this.add.text(assets.scene.width * 2, 80, '0', {
 			fontFamily: 'font1',
 			fontSize: '76px',
@@ -285,10 +278,9 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreTxt.setOrigin(0.5);
 		this.scoreTxt.alpha = 0;
 	
-		// Current score
-		this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', {
+		this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', { //340
 			fontFamily: 'font1',
-			fontSize: '48px',
+			fontSize: '48px',  //36px
 			fill: '#fff',
 			stroke: '#000',
 			strokeThickness: 6,
@@ -296,8 +288,7 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scored.setDepth(30);
 		this.scored.setOrigin(0.5);
 	
-		// Best score
-		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 460, '0', {
+		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 460, '0', { //420
 			fontFamily: 'font1',
 			fontSize: '48px',
 			fill: '#fff',
@@ -306,6 +297,8 @@ class FlappyBirdScene extends Phaser.Scene {
 		});
 		this.bestScore.setDepth(30);
 		this.bestScore.setOrigin(0.5, 0.5);
+	
+		this.initGame();
 	}
 
 	// Add a method to handle background scrolling
