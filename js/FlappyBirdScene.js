@@ -273,8 +273,8 @@ class FlappyBirdScene extends Phaser.Scene {
 		// Do initial update
 		this.updateActiveUsers();
 	
-		// Periodically update the active users count
-		this.time.addEvent({
+		// Create a timer for active users updates
+		this.activeUsersTimer = this.time.addEvent({
 			delay: 30000,
 			callback: this.updateActiveUsers,
 			callbackScope: this,
@@ -320,17 +320,15 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 
 	updateActiveUsers = async () => {
-		// Add cooldown check
-		if (this.lastUpdateTime && Date.now() - this.lastUpdateTime < 30000) {
-			return; // Skip if less than 30 seconds since last update
-		}
-	
 		try {
 			const response = await fetch('https://zusu.xyz/api/active-users');
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 			const data = await response.json();
 			if (this.activeUsersText) {
+				console.log('Updating active users to:', data.activeUsers); // Debug log
 				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
-				this.lastUpdateTime = Date.now(); // Record last successful update time
 			}
 		} catch (error) {
 			console.error('Error updating active users:', error);
