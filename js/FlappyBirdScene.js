@@ -510,12 +510,6 @@ class FlappyBirdScene extends Phaser.Scene {
 			gap.body.setVelocityX(-170);//////////////////////////
 		});
 
-		this.nextPipes++;
-
-		if (this.nextPipes === 150) { ///////////////////////////
-			this.makePipes();
-			this.nextPipes = 0;
-		}
 	}
 
 	initGame() {
@@ -578,6 +572,10 @@ class FlappyBirdScene extends Phaser.Scene {
             this.sound.play('hitSound', { volume: 0.4 });
             this.hasPlayedDeathSound = true; 
 
+			if (this.pipeTimer) {
+				this.pipeTimer.remove();
+			}
+
 			// Submit the score to the server
 			fetch('https://zusu.xyz/api/submit-score', {
 				method: 'POST',
@@ -629,6 +627,12 @@ class FlappyBirdScene extends Phaser.Scene {
 		scene.pipes.clear(true, true);
 		scene.gaps.clear(true, true);
 		scene.flappyBird.destroy();
+
+		// Clean up pipe timer if it exists
+		if (this.pipeTimer) {
+			this.pipeTimer.remove();
+			this.pipeTimer = null;
+		}
 		
 		// Hide UI elements
 		scene.gameOver.visible = false;
@@ -681,6 +685,13 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.hasGameStarted = true;
 		this.start.visible = false;
 		this.makePipes();
+
+		this.pipeTimer = this.time.addEvent({
+			delay: 2000, ///////////////////////////////// 2 seconds between pipes
+			callback: this.makePipes,
+			callbackScope: this,
+			loop: true
+		});
 	}
 
 	makePipes() {
