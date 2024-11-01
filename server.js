@@ -81,21 +81,34 @@ app.post('/api/update-active-users', (req, res) => {
     requestCount++;
     const { change } = req.body;
     
-    // Add random fluctuation
-    const randomChange = Math.floor(Math.random() * 10) - 5; // Random number between -5 and +5
-    
-    if (typeof change === 'number') {
-        // Apply both the requested change and random fluctuation
-        activeUsers += change + randomChange;
+    if (change !== undefined) {
+        // Calculate new value
+        let newCount = activeUsers + change;
         
-        // Ensure the active users count stays within bounds
-        activeUsers = Math.min(Math.max(activeUsers, 400), 900);
+        // Add small random variation
+        newCount += Math.floor(Math.random() * 6) - 3; // -3 to +3
         
-        console.log('Active users updated to:', activeUsers); // Debug log
+        // Ensure within bounds
+        newCount = Math.min(Math.max(newCount, 400), 900);
         
-        res.json({ success: true, activeUsers });
+        // Update the actual value
+        activeUsers = newCount;
+        
+        console.log('Updated active users from POST:', activeUsers); // Debug log
+        
+        res.json({ 
+            success: true, 
+            activeUsers,
+            previousCount: activeUsers,
+            change: change,
+            finalCount: newCount
+        });
     } else {
-        res.status(400).json({ success: false, message: "Invalid request" });
+        res.status(400).json({ 
+            success: false, 
+            message: "Invalid request",
+            currentCount: activeUsers 
+        });
     }
 });
 

@@ -275,7 +275,7 @@ class FlappyBirdScene extends Phaser.Scene {
 	
 		// Create a timer for active users updates
 		this.activeUsersTimer = this.time.addEvent({
-			delay: 30000,
+			delay: 10000,
 			callback: this.updateActiveUsers,
 			callbackScope: this,
 			loop: true
@@ -321,22 +321,32 @@ class FlappyBirdScene extends Phaser.Scene {
 
 	updateActiveUsers = async () => {
 		try {
-			const response = await fetch('https://zusu.xyz/api/active-users');
+			// Generate a more significant change
+			const change = Math.floor(Math.random() * 21) - 10; // -10 to +10
+			
+			console.log('Sending change request:', change); // Debug log
+	
+			const response = await fetch('https://zusu.xyz/api/update-active-users', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ change })
+			});
+	
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
+	
 			const data = await response.json();
-			if (this.activeUsersText) {
-				console.log('Updating active users to:', data.activeUsers); // Debug log
+			console.log('Server response:', data); // Debug log
+	
+			if (this.activeUsersText && data.success) {
+				console.log(`Updating display from ${this.activeUsersText.text} to: Active Players: ${data.activeUsers}`);
 				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
 			}
 		} catch (error) {
 			console.error('Error updating active users:', error);
-			// Provide fallback number if server request fails
-			if (this.activeUsersText) {
-				const fallbackNumber = Math.floor(Math.random() * (this.maxUsers - this.minUsers) + this.minUsers);
-				this.activeUsersText.setText(`Active Players: ${fallbackNumber}`);
-			}
 		}
 	};
 
