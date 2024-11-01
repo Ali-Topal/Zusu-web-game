@@ -46,16 +46,6 @@ class FlappyBirdScene extends Phaser.Scene {
 
 	create() {
 		let game = this;
-
-		fetchActiveUsers = async () => {
-			try {
-				const response = await fetch('https://zusu.xyz/api/active-users');
-				const data = await response.json();
-				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
-			} catch (error) {
-				console.error('Error fetching active users:', error);
-			}
-		};
 	
 		// Initialize username
 		this.username = localStorage.getItem('flappyUsername');
@@ -280,8 +270,8 @@ class FlappyBirdScene extends Phaser.Scene {
 	}
 	
 	setupGameUpdates() {
-		// Initially fetch the active users count
-		this.fetchActiveUsers();
+		// Do initial update
+		this.updateActiveUsers();
 	
 		// Periodically update the active users count
 		this.time.addEvent({
@@ -329,19 +319,17 @@ class FlappyBirdScene extends Phaser.Scene {
 		localStorage.setItem('flappyUsername', username);
 	}
 
-	updateActiveUsers() {
-		// Fetch the active users count from the server
-		fetch('https://zusu.xyz/api/active-users')
-			.then(response => response.json())
-			.then(data => {
-				// Update the active users count text on the screen
-				this.currentUsers = data.activeUsers;
-				this.activeUsersText.setText(`Active Players: ${this.currentUsers}`);
-			})
-			.catch(error => {
-				console.error('Error fetching active users:', error);
-			});
-	}
+	updateActiveUsers = async () => {
+		try {
+			const response = await fetch('https://zusu.xyz/api/active-users');
+			const data = await response.json();
+			if (this.activeUsersText) {
+				this.activeUsersText.setText(`Active Players: ${data.activeUsers}`);
+			}
+		} catch (error) {
+			console.error('Error updating active users:', error);
+		}
+	};
 
 	toggleLeaderboard() {
 		// Toggle the leaderboard visibility
