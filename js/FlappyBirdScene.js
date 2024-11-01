@@ -204,6 +204,70 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.scoreboard.scale = 1;
 		this.scoreboard.setDepth(30);
 	}
+
+	createGameText() {
+		// Create active users text
+		this.activeUsersText = this.add.text(150, 0, 'Active Players: 0', {
+			fontFamily: 'font1',
+			fontSize: '24px', 
+			fill: '#ffffff',
+			stroke: '#000',
+			strokeThickness: 8, 
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5, 
+				offsetY: 6, 
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		});
+		this.activeUsersText.setDepth(80);
+	
+		// Score text
+		this.scoreTxt = this.add.text(assets.scene.width * 2, 80, '0', {
+			fontFamily: 'font1',
+			fontSize: '76px',
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 8,
+			strokeLinecap: 'square',
+			shadow: {
+				offsetX: 5,
+				offsetY: 6,
+				color: '#000',
+				blur: 0,
+				stroke: true,
+				fill: true
+			}
+		});
+		this.scoreTxt.setDepth(30);
+		this.scoreTxt.setOrigin(0.5);
+		this.scoreTxt.alpha = 0;
+	
+		// Current score
+		this.scored = this.add.text(assets.scene.width * 2 + 2, 340, '0', {
+			fontFamily: 'font1',
+			fontSize: '48px',
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 6,
+		});
+		this.scored.setDepth(30);
+		this.scored.setOrigin(0.5);
+	
+		// Best score
+		this.bestScore = this.add.text(assets.scene.width * 2 + 2, 460, '0', {
+			fontFamily: 'font1',
+			fontSize: '48px',
+			fill: '#fff',
+			stroke: '#000',
+			strokeThickness: 6,
+		});
+		this.bestScore.setDepth(30);
+		this.bestScore.setOrigin(0.5, 0.5);
+	}
 	
 	setupGameUpdates() {
 		// Initially fetch the active users count
