@@ -423,19 +423,6 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.leaderboardBackdrop.fillStyle(0x000000, 0.8);
 		this.leaderboardBackdrop.fillRect(0, 0, this.sys.game.config.width, 720);
 		this.leaderboardBackdrop.setDepth(99);
-
-		this.editNameButton = this.add.image(
-			this.sys.game.config.width / 2,
-			yPosition + (6.5 * entrySpacing), // Position it below the leaderboard
-			'edit-name'
-		).setInteractive();
-		
-		this.editNameButton.setScale(2);  // Adjust scale as needed
-		this.editNameButton.setDepth(100);
-
-		this.editNameButton.on('pointerdown', () => {
-			this.handleNameEdit();
-		});
 	
 		// Initialize array to store score texts
 		this.scoreTexts = [];
@@ -453,8 +440,8 @@ class FlappyBirdScene extends Phaser.Scene {
 		const currentUserEntry = leaderboard.find(entry => entry.username === this.username);
 		const currentUserPosition = leaderboard.findIndex(entry => entry.username === this.username) + 1;
 	
-		// Display top 5 scores
-		let yPosition = 280;
+		// Define base position and spacing
+		const yPosition = 280;
 		const entrySpacing = 50;
 	
 		// Show top 5 scores
@@ -476,6 +463,20 @@ class FlappyBirdScene extends Phaser.Scene {
 			).setOrigin(0.5).setDepth(100);
 	
 			this.scoreTexts.push(scoreText);
+		});
+	
+		// Add edit name button - positioned below leaderboard entries
+		this.editNameButton = this.add.image(
+			this.sys.game.config.width / 2,
+			yPosition + (6.5 * entrySpacing), // Position below scores
+			'edit-name'
+		).setInteractive();
+		
+		this.editNameButton.setScale(2);
+		this.editNameButton.setDepth(100);
+		
+		this.editNameButton.on('pointerdown', () => {
+			this.handleNameEdit();
 		});
 	
 		// If current user is not in top 5 but has a score, show their score below
