@@ -494,7 +494,7 @@ class FlappyBirdScene extends Phaser.Scene {
 			// Add user's high score below separator
 			this.userScoreText = this.add.text(
 				this.sys.game.config.width / 2,
-				yPosition + (5 * entrySpacing),
+				yPosition + (4 * entrySpacing),
 				`${currentUserPosition}. ${this.username}: ${this.highScore}`,
 				{
 					fontFamily: 'font1',
