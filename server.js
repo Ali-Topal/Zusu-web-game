@@ -110,14 +110,6 @@ app.post('/api/update-active-users', (req, res) => {
     }
 });
 
-// Username generation with uniqueness check
-app.post('/api/check-username', (req, res) => {
-    requestCount++;
-    const { username } = req.body;
-    const isAvailable = !Object.values(users).some(user => user.username === username);
-    res.json({ available: isAvailable });
-});
-
 // Score submission with validation
 app.post('/api/submit-score', (req, res) => {
     requestCount++;
@@ -169,11 +161,15 @@ app.get('/api/leaderboard', (req, res) => {
 
 // Check if username is available
 app.post('/api/check-username', (req, res) => {
-    const { username } = req.body;
+    const { username, currentUsername } = req.body;
     
-    // Check if username exists in scores or users
-    const exists = Object.values(users).some(user => user.username === username) ||
-                  Object.keys(scores).includes(username);
+    // If user is trying to keep their current name, that's allowed
+    if (username === currentUsername) {
+        return res.json({ available: true });
+    }
+    
+    // Check if username exists in scores object
+    const exists = Object.keys(scores).includes(username);
     
     res.json({ available: !exists });
 });
@@ -182,9 +178,26 @@ app.post('/api/check-username', (req, res) => {
 app.post('/api/update-username', (req, res) => {
     const { oldUsername, newUsername } = req.body;
     
-    // Update score
+    // If trying to update to the same name, just return success
+    if (oldUsername === newUsername) {
+        return res.json({ 
+            success: true, 
+            message: "Username unchanged" 
+        });
+    }
+
+    // Check if new username already exists
+    if (Object.keys(scores).includes(newUsername)) {
+        return res.json({ 
+            success: false, 
+            message: "Username already taken" 
+        });
+    }
+
+    // Update score if it exists
     if (scores[oldUsername] !== undefined) {
-        scores[newUsername] = scores[oldUsername];
+        const score = scores[oldUsername];
+        scores[newUsername] = score;
         delete scores[oldUsername];
     }
 

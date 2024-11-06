@@ -735,6 +735,12 @@ class FlappyBirdScene extends Phaser.Scene {
 		// Prompt for new name
 		let newName = prompt('Enter new name (max 9 characters):');
 		
+		// Handle cancel button
+		if (newName === null) return;
+		
+		// Trim whitespace
+		newName = newName.trim();
+		
 		// Validate input
 		if (!newName) {
 			alert('Name cannot be empty');
@@ -746,6 +752,12 @@ class FlappyBirdScene extends Phaser.Scene {
 			return;
 		}
 	
+		// If trying to set the same name, no need to update
+		if (newName === this.username) {
+			alert('This is already your current username');
+			return;
+		}
+	
 		try {
 			// Check if name is available
 			const checkResponse = await fetch('https://zusu.xyz/api/check-username', {
@@ -753,7 +765,10 @@ class FlappyBirdScene extends Phaser.Scene {
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ username: newName })
+				body: JSON.stringify({ 
+					username: newName,
+					currentUsername: this.username // Send current username for comparison
+				})
 			});
 	
 			const checkData = await checkResponse.json();
@@ -788,11 +803,11 @@ class FlappyBirdScene extends Phaser.Scene {
 				
 				alert('Username updated successfully!');
 			} else {
-				alert('Failed to update username');
+				alert(updateData.message || 'Failed to update username');
 			}
 		} catch (error) {
 			console.error('Error updating username:', error);
-			alert('Error updating username');
+			alert('Error updating username. Please try again.');
 		}
 	}
 }
