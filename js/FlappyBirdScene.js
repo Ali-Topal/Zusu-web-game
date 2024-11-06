@@ -731,84 +731,182 @@ class FlappyBirdScene extends Phaser.Scene {
 		pipeBottom.body.allowGravity = false;
 	}
 
-	async handleNameEdit() {
-		// Prompt for new name
-		let newName = prompt('Enter new name (max 9 characters):');
-		
-		// Handle cancel button
-		if (newName === null) return;
-		
-		// Trim whitespace
-		newName = newName.trim();
-		
-		// Validate input
-		if (!newName) {
-			alert('Name cannot be empty');
-			return;
-		}
+	handleNameEdit() {
+		// Create a semi-transparent backdrop
+		const modalBackdrop = this.add.graphics();
+		modalBackdrop.fillStyle(0x000000, 0.8);
+		modalBackdrop.fillRect(0, 0, this.sys.game.config.width, this.sys.game.config.height);
+		modalBackdrop.setDepth(200);
 	
-		if (newName.length > 9) {
-			alert('Name cannot be longer than 9 characters');
-			return;
-		}
+		// Create input background
+		const inputBackground = this.add.graphics();
+		inputBackground.fillStyle(0x222222, 0.9);
+		inputBackground.fillRect(
+			this.sys.game.config.width / 2 - 150,
+			this.sys.game.config.height / 2 - 100,
+			300,
+			200
+		);
+		inputBackground.setDepth(201);
 	
-		// If trying to set the same name, no need to update
-		if (newName === this.username) {
-			alert('This is already your current username');
-			return;
-		}
+		// Create title text
+		const titleText = this.add.text(
+			this.sys.game.config.width / 2,
+			this.sys.game.config.height / 2 - 70,
+			'Enter New Name',
+			{
+				fontFamily: 'font1',
+				fontSize: '32px',
+				fill: '#ffffff',
+				stroke: '#000000',
+				strokeThickness: 4
+			}
+		).setOrigin(0.5).setDepth(202);
 	
-		try {
-			// Check if name is available
-			const checkResponse = await fetch('https://zusu.xyz/api/check-username', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ 
-					username: newName,
-					currentUsername: this.username // Send current username for comparison
-				})
-			});
+		// Create input element
+		const inputElement = document.createElement('input');
+		inputElement.style.position = 'absolute';
+		inputElement.style.left = '50%';
+		inputElement.style.top = '50%';
+		inputElement.style.transform = 'translate(-50%, -50%)';
+		inputElement.style.width = '200px';
+		inputElement.style.padding = '8px';
+		inputElement.style.fontSize = '16px';
+		inputElement.style.textAlign = 'center';
+		inputElement.style.borderRadius = '4px';
+		inputElement.style.border = '2px solid #666';
+		inputElement.maxLength = 9;
+		inputElement.value = this.username || '';
 	
-			const checkData = await checkResponse.json();
+		// Create confirm button
+		const confirmButton = this.add.text(
+			this.sys.game.config.width / 2 - 60,
+			this.sys.game.config.height / 2 + 50,
+			'Confirm',
+			{
+				fontFamily: 'font1',
+				fontSize: '24px',
+				fill: '#00ff00',
+				stroke: '#000000',
+				strokeThickness: 4,
+				backgroundColor: '#333333',
+				padding: { x: 10, y: 5 }
+			}
+		).setInteractive().setDepth(202);
 	
-			if (!checkData.available) {
-				alert('This name is already taken');
+		// Create cancel button
+		const cancelButton = this.add.text(
+			this.sys.game.config.width / 2 + 60,
+			this.sys.game.config.height / 2 + 50,
+			'Cancel',
+			{
+				fontFamily: 'font1',
+				fontSize: '24px',
+				fill: '#ff0000',
+				stroke: '#000000',
+				strokeThickness: 4,
+				backgroundColor: '#333333',
+				padding: { x: 10, y: 5 }
+			}
+		).setInteractive().setDepth(202);
+	
+		// Add input element to DOM
+		document.body.appendChild(inputElement);
+		inputElement.focus();
+	
+		// Handle confirm button click
+		confirmButton.on('pointerdown', async () => {
+			const newName = inputElement.value.trim();
+			
+			if (!newName) {
+				this.showError('Name cannot be empty');
 				return;
 			}
 	
-			// If name is available, update it
-			const updateResponse = await fetch('https://zusu.xyz/api/update-username', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					oldUsername: this.username,
-					newUsername: newName
-				})
-			});
-	
-			const updateData = await updateResponse.json();
-	
-			if (updateData.success) {
-				// Update local storage and current username
-				localStorage.setItem('flappyUsername', newName);
-				this.username = newName;
-				
-				// Refresh leaderboard display
-				this.hideLeaderboard();
-				this.showLeaderboard();
-				
-				alert('Username updated successfully!');
-			} else {
-				alert(updateData.message || 'Failed to update username');
+			if (newName === this.username) {
+				this.showError('This is already your current username');
+				cleanup();
+				return;
 			}
-		} catch (error) {
-			console.error('Error updating username:', error);
-			alert('Error updating username. Please try again.');
-		}
+	
+			try {
+				// Check if name is available
+				const checkResponse = await fetch('https://zusu.xyz/api/check-username', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ 
+						username: newName,
+						currentUsername: this.username
+					})
+				});
+	
+				const checkData = await checkResponse.json();
+				if (!checkData.available) {
+					this.showError('This name is already taken');
+					return;
+				}
+	
+				const updateResponse = await fetch('https://zusu.xyz/api/update-username', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						oldUsername: this.username,
+						newUsername: newName
+					})
+				});
+	
+				const updateData = await updateResponse.json();
+				if (updateData.success) {
+					localStorage.setItem('flappyUsername', newName);
+					this.username = newName;
+					cleanup();
+					this.hideLeaderboard();
+					this.showLeaderboard();
+				} else {
+					this.showError(updateData.message || 'Failed to update username');
+				}
+			} catch (error) {
+				console.error('Error updating username:', error);
+				this.showError('Error updating username');
+			}
+		});
+	
+		// Handle cancel button click
+		cancelButton.on('pointerdown', cleanup);
+	
+		// Cleanup function
+		const cleanup = () => {
+			inputElement.remove();
+			modalBackdrop.destroy();
+			inputBackground.destroy();
+			titleText.destroy();
+			confirmButton.destroy();
+			cancelButton.destroy();
+		};
+	
+		// Helper function to show errors
+		this.showError = (message) => {
+			const errorText = this.add.text(
+				this.sys.game.config.width / 2,
+				this.sys.game.config.height / 2 + 20,
+				message,
+				{
+					fontFamily: 'font1',
+					fontSize: '20px',
+					fill: '#ff0000',
+					stroke: '#000000',
+					strokeThickness: 4
+				}
+			).setOrigin(0.5).setDepth(202);
+	
+			this.time.delayedCall(2000, () => {
+				errorText.destroy();
+			});
+		};
 	}
 }
 
