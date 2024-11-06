@@ -468,7 +468,7 @@ class FlappyBirdScene extends Phaser.Scene {
 		// Add edit name button - positioned below leaderboard entries
 		this.editNameButton = this.add.image(
 			this.sys.game.config.width / 2,
-			yPosition + (6.5 * entrySpacing), // Position below scores
+			560, // Position below scores
 			'edit-name'
 		).setInteractive();
 		
