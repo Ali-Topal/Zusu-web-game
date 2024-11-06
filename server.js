@@ -167,6 +167,43 @@ app.get('/api/leaderboard', (req, res) => {
     res.json({ leaderboard });
 });
 
+// Check if username is available
+app.post('/api/check-username', (req, res) => {
+    const { username } = req.body;
+    
+    // Check if username exists in scores or users
+    const exists = Object.values(users).some(user => user.username === username) ||
+                  Object.keys(scores).includes(username);
+    
+    res.json({ available: !exists });
+});
+
+// Update username
+app.post('/api/update-username', (req, res) => {
+    const { oldUsername, newUsername } = req.body;
+    
+    // Update score
+    if (scores[oldUsername] !== undefined) {
+        scores[newUsername] = scores[oldUsername];
+        delete scores[oldUsername];
+    }
+
+    // Update users object if necessary
+    Object.keys(users).forEach(key => {
+        if (users[key].username === oldUsername) {
+            users[key].username = newUsername;
+        }
+    });
+
+    // Invalidate leaderboard cache
+    cachedLeaderboard = null;
+
+    res.json({ 
+        success: true, 
+        message: "Username updated successfully" 
+    });
+});
+
 // Periodic monitoring logs
 const monitoringInterval = setInterval(() => {
     const memoryUsage = process.memoryUsage();

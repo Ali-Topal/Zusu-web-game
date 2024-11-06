@@ -28,6 +28,7 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.load.image(assets.scene.gameOver, 'assets/gameover.png');
 		this.load.image(assets.scene.restartGame, 'assets/restart-button.png');
 		this.load.image(assets.scene.leaderboardButtonGameOver, 'assets/leaderboard-button-game-over.png');
+		this.load.image('edit-name', 'assets/edit-name.png');
 
 		[assets.obstacle.pipe.green, assets.obstacle.pipe.red].forEach(function (pipe) {
 			game.load.image(pipe.top, `assets/${pipe.top}.png`);
@@ -404,6 +405,11 @@ class FlappyBirdScene extends Phaser.Scene {
 			this.userScoreText.destroy();
 			this.userScoreText = null;
 		}
+
+		if (this.editNameButton) {
+			this.editNameButton.destroy();
+			this.editNameButton = null;
+		}
 	
 		// Re-enable the restart button
 		this.restart.setInteractive();
@@ -417,6 +423,19 @@ class FlappyBirdScene extends Phaser.Scene {
 		this.leaderboardBackdrop.fillStyle(0x000000, 0.8);
 		this.leaderboardBackdrop.fillRect(0, 0, this.sys.game.config.width, 720);
 		this.leaderboardBackdrop.setDepth(99);
+
+		this.editNameButton = this.add.image(
+			this.sys.game.config.width / 2,
+			yPosition + (6.5 * entrySpacing), // Position it below the leaderboard
+			'edit-name'
+		).setInteractive();
+		
+		this.editNameButton.setScale(2);  // Adjust scale as needed
+		this.editNameButton.setDepth(100);
+
+		this.editNameButton.on('pointerdown', () => {
+			this.handleNameEdit();
+		});
 	
 		// Initialize array to store score texts
 		this.scoreTexts = [];
@@ -709,6 +728,71 @@ class FlappyBirdScene extends Phaser.Scene {
 
 		const pipeBottom = this.pipes.create(650, top + 850, this.currentPipe.bottom).setImmovable(true); //adjust gap between pipes
 		pipeBottom.body.allowGravity = false;
+	}
+
+	async handleNameEdit() {
+		// Prompt for new name
+		let newName = prompt('Enter new name (max 9 characters):');
+		
+		// Validate input
+		if (!newName) {
+			alert('Name cannot be empty');
+			return;
+		}
+	
+		if (newName.length > 9) {
+			alert('Name cannot be longer than 9 characters');
+			return;
+		}
+	
+		try {
+			// Check if name is available
+			const checkResponse = await fetch('https://zusu.xyz/api/check-username', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ username: newName })
+			});
+	
+			const checkData = await checkResponse.json();
+	
+			if (!checkData.available) {
+				alert('This name is already taken');
+				return;
+			}
+	
+			// If name is available, update it
+			const updateResponse = await fetch('https://zusu.xyz/api/update-username', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					oldUsername: this.username,
+					newUsername: newName
+				})
+			});
+	
+			const updateData = await updateResponse.json();
+	
+			if (updateData.success) {
+				// Update local storage and current username
+				localStorage.setItem('flappyUsername', newName);
+				this.username = newName;
+				
+				// Refresh leaderboard display
+				this.hideLeaderboard();
+				this.showLeaderboard();
+				
+				alert('Username updated successfully!');
+			} else {
+				alert('Failed to update username');
+			}
+		} catch (error) {
+			console.error('Error updating username:', error);
+			alert('Error updating username');
+		}
 	}
 }
 
