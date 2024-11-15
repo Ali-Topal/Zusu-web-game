@@ -107,7 +107,7 @@ function addButtonClickListeners() {
         console.log("Button 3 found in DOM");
         button3.onclick = function() {
             console.log("Button 3 clicked");
-            window.open('https://tenor.com/en-GB/view/two-black-people-gif-27160499', '_blank'); // Redirect to pumpfun
+            window.open('https://pump.fun/coin/9CZyeAa5mAFzyS3GydokqbbuGVhZuocH5LcvfwRKpump', '_blank'); // Redirect to pumpfun
         };
     } else {
         console.error("Button 3 not found in DOM");
